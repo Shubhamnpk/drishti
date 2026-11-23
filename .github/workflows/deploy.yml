@@ -15,52 +15,66 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 20
     steps:
-      - name: Deploy to Oracle VM
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install
+        run: bun install --frozen-lockfile
+
+      - name: Build
+        env:
+          NEXT_PUBLIC_BUILD_NUMBER: ${{ github.run_number }}
+        run: bun run build
+
+      - name: Ship and swap
         env:
           DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
-          DEPLOY_HOST: 137.23.48.14
         run: |
           echo "$DEPLOY_KEY" > /tmp/deploy_key
           chmod 600 /tmp/deploy_key
-          ssh -i /tmp/deploy_key \
-              -o StrictHostKeyChecking=no \
-              -o ConnectTimeout=20 \
-              ubuntu@"$DEPLOY_HOST" 'bash -s' <<'REMOTE'
+          SSH_OPTS="-o StrictHostKeyChecking=no -o ServerAliveInterval=15 -o ServerAliveCountMax=4"
+          HOST=ubuntu@137.23.48.14
+
+          echo "::group::sync source"
+          ssh -i /tmp/deploy_key $SSH_OPTS $HOST 'cd ~/drishti && git fetch --prune origin && git reset --hard origin/main'
+          echo "::endgroup::"
+
+          echo "::group::ship build"
+          rsync -az --delete --exclude cache \
+            -e "ssh -i /tmp/deploy_key $SSH_OPTS" \
+            .next/ $HOST:/home/ubuntu/drishti/.next-new/
+          echo "::endgroup::"
+
+          echo "::group::swap and restart"
+          ssh -i /tmp/deploy_key $SSH_OPTS $HOST 'bash -s' <<'REMOTE'
           set -euo pipefail
           export PATH="$HOME/.bun/bin:$PATH"
           cd "$HOME/drishti"
-
-          echo "::group::pull"
-          git fetch --prune origin
-          git reset --hard origin/main
-          echo "::endgroup::"
-
-          echo "::group::install"
           bun install --frozen-lockfile
-          echo "::endgroup::"
 
-          echo "::group::build"
-          rm -rf .next.bak
-          mv .next .next.bak
-          if ! bun run build; then
-            echo "build failed - rolling back to previous build"
-            rm -rf .next && mv .next.bak .next
-            sudo systemctl restart drishti
-            exit 1
-          fi
-          echo "::endgroup::"
+          rm -rf .next.old
+          mv .next .next.old
+          mv .next-new .next
 
           sudo systemctl restart drishti
           sleep 6
           code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 http://127.0.0.1:3000/ || echo 000)
           if [ "$code" != "200" ]; then
             echo "health check failed ($code) - rolling back"
-            rm -rf .next && mv .next.bak .next
+            rm -rf .next && mv .next.old .next
             sudo systemctl restart drishti
             exit 1
           fi
-          rm -rf .next.bak
+          rm -rf .next.old
           echo "deployed $(git rev-parse --short HEAD)"
           REMOTE
+          echo "::endgroup::"
