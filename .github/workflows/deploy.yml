@@ -1,0 +1,66 @@
+name: deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-drishti
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Deploy to Oracle VM
+        env:
+          DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
+          DEPLOY_HOST: 137.23.48.14
+        run: |
+          echo "$DEPLOY_KEY" > /tmp/deploy_key
+          chmod 600 /tmp/deploy_key
+          ssh -i /tmp/deploy_key \
+              -o StrictHostKeyChecking=no \
+              -o ConnectTimeout=20 \
+              ubuntu@"$DEPLOY_HOST" 'bash -s' <<'REMOTE'
+          set -euo pipefail
+          export PATH="$HOME/.bun/bin:$PATH"
+          cd "$HOME/drishti"
+
+          echo "::group::pull"
+          git fetch --prune origin
+          git reset --hard origin/main
+          echo "::endgroup::"
+
+          echo "::group::install"
+          bun install --frozen-lockfile
+          echo "::endgroup::"
+
+          echo "::group::build"
+          rm -rf .next.bak
+          mv .next .next.bak
+          if ! bun run build; then
+            echo "build failed - rolling back to previous build"
+            rm -rf .next && mv .next.bak .next
+            sudo systemctl restart drishti
+            exit 1
+          fi
+          echo "::endgroup::"
+
+          sudo systemctl restart drishti
+          sleep 6
+          code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 http://127.0.0.1:3000/ || echo 000)
+          if [ "$code" != "200" ]; then
+            echo "health check failed ($code) - rolling back"
+            rm -rf .next && mv .next.bak .next
+            sudo systemctl restart drishti
+            exit 1
+          fi
+          rm -rf .next.bak
+          echo "deployed $(git rev-parse --short HEAD)"
+          REMOTE
