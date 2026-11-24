@@ -7,6 +7,7 @@ import { RelatedDatasets } from '@/components/related-datasets'
 import { ProjectGallery } from '@/components/project-gallery'
 import type { ProjectUpdate } from '@/lib/types'
 import { formatNpr, formatNprText } from '@/lib/currency'
+import { pageMetadata, truncate } from '@/lib/seo'
 
 export function generateStaticParams() {
   return projects.map(p => ({ slug: slugify(p.name) }))
@@ -16,11 +17,11 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params
   const project = findProjectBySlug(slug)
   if (!project) return { title: 'Project not found' }
-  return {
+  return pageMetadata({
     title: `${project.name} progress and budget`,
-    description: project.description?.slice(0, 150),
-    alternates: { canonical: `/projects/${slug}` },
-  }
+    description: truncate(project.description || `${project.name}: budget, reported progress, status and evidence for this national priority project in ${project.province}, Nepal.`),
+    path: `/projects/${slug}`,
+  })
 }
 
 function statusColor(status: string) {

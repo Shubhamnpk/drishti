@@ -16,7 +16,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - No lint/test/format scripts or `eslint.config.*` in repo; no `README.md`
 
 ## Stack
-Next.js 16.3.3 App Router + Turbopack, React 19, TypeScript 5.7 strict (`noEmit`, `bundler` resolution, `isolatedModules`), Tailwind v4 via `@tailwindcss/postcss` + `tw-animate-css`, shadcn `base-nova` (RSC, `lucide`), `next/font` Inter, `@vercel/analytics` (prod only).
+Next.js 16.3.3 App Router + Turbopack, React 19, TypeScript 5.7 strict (`noEmit`, `bundler` resolution, `isolatedModules`), Tailwind v4 via `@tailwindcss/postcss` + `tw-animate-css`, shadcn `base-nova` (RSC, `lucide`), `next/font` Inter.
 
 ## Paths & aliases
 - Alias `@/*` → `./*` (not `./src/*`) — `tsconfig.json:paths`

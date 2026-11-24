@@ -87,6 +87,13 @@ export default function CityDetailPage() {
   const [missing, setMissing] = useState(false)
 
   const city = stations.find(s => slugify(s.name) === params.slug) ?? null
+  // Server-rendered fallback so the h1 carries the place name in the first HTML
+  // response instead of a loading glyph.
+  const fallbackName = params.slug
+    .split('-')
+    .filter(Boolean)
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ')
   const observed = obs?.stations?.find(s => s.id === city?.id) ?? null
 
   useEffect(() => {
@@ -250,7 +257,7 @@ export default function CityDetailPage() {
               <MapPin size={10} style={{ display: 'inline', verticalAlign: '-1px' }} /> {city ? `${city.latitude.toFixed(2)}°N, ${city.longitude.toFixed(2)}°E` : 'LOCATING…'}
             </p>
             <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(1.8rem, 3.5vw, 2.6rem)', fontWeight: 500, letterSpacing: '-.03em', margin: '.3rem 0' }}>
-              {city?.name ?? '…'}
+              {city?.name ?? fallbackName}
             </h1>
             <div style={{ display: 'flex', gap: '1.75rem', marginTop: '1rem', flexWrap: 'wrap', alignItems: 'flex-end' }}>
               <div>

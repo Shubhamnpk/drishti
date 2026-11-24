@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { MarketSectorDetail } from '@/components/market-sector-detail'
 import { fetchNepseSectorMap, fetchNepseSectorPerformance, fetchNepseStocks } from '@/lib/nepse'
+import { pageMetadata } from '@/lib/seo'
 
 type Props = { params: Promise<{ sector: string }> }
 
@@ -12,7 +13,11 @@ function routeSector(value: string): string {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { sector } = await params
   const name = routeSector(sector)
-  return { title: `${name} sector on NEPSE`, description: `${name} constituents, market breadth, session movers and turnover on the Nepal Stock Exchange.` }
+  return pageMetadata({
+    title: `${name} sector on NEPSE`,
+    description: `${name} constituents, market breadth, session movers and turnover on the Nepal Stock Exchange.`,
+    path: `/market/sector/${encodeURIComponent(name)}`,
+  })
 }
 
 export default async function SectorPage({ params }: Props) {

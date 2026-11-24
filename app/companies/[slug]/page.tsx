@@ -10,6 +10,7 @@ import { CompanyAccountability } from '@/components/company-accountability'
 import { companyProfiles } from '@/lib/company-profiles'
 import { formatNprOrNA, formatNprText } from '@/lib/currency'
 import { getCompanyCategory } from '@/lib/company-categories'
+import { pageMetadata, truncate } from '@/lib/seo'
 
 export function generateStaticParams() {
   return companies.map(c => ({ slug: slugify(c.name) }))
@@ -19,11 +20,11 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params
   const company = findCompanyBySlug(slug)
   if (!company) return { title: 'Company not found' }
-  return {
+  return pageMetadata({
     title: `${company.name} financial profile`,
-    description: `${getCompanyCategory(company)} · ${company.operatingStatus} · ${formatNprText(company.result)} · ${formatNprText(company.note).slice(0, 140)}`,
-    alternates: { canonical: `/companies/${slug}` },
-  }
+    description: truncate(`${getCompanyCategory(company)} · ${company.operatingStatus} · ${formatNprText(company.result)} · ${formatNprText(company.note)}`, 155),
+    path: `/companies/${slug}`,
+  })
 }
 
 export default async function CompanyDetailPage({ params }: { params: Promise<{ slug: string }> }) {

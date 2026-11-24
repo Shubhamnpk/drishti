@@ -2021,7 +2021,7 @@ export const projects: Project[] = [
     "target": "FY 2085/86 (NPC estimate)",
     "source": "National Planning Commission - National Pride progress, FY 2082/83",
     "sourceUrl": "https://npc.gov.np/content/6836/overall-progress-statement-of-the-project-of/",
-    "image": "/images/nepal-infrastructure.png",
+    "image": "/images/nepal-infrastructure.webp",
     "checklist": [
       {
         "label": "Feasibility & design",
@@ -2082,7 +2082,7 @@ export const projects: Project[] = [
     "target": "FY 2088/89 (NPC estimate)",
     "source": "National Planning Commission - National Pride progress, FY 2082/83",
     "sourceUrl": "https://npc.gov.np/content/6836/overall-progress-statement-of-the-project-of/",
-    "image": "/images/nepal-infrastructure.png",
+    "image": "/images/nepal-infrastructure.webp",
     "changeLog": [
       {
         "date": "15 Oct 2026",
@@ -2402,7 +2402,7 @@ export const projects: Project[] = [
     "target": "Completion year not set",
     "source": "National Planning Commission - National Pride progress, FY 2082/83",
     "sourceUrl": "https://npc.gov.np/content/6836/overall-progress-statement-of-the-project-of/",
-    "image": "/images/nepal-infrastructure.png",
+    "image": "/images/nepal-infrastructure.webp",
     "checklist": [
       {
         "label": "Feasibility & design",
@@ -2618,7 +2618,7 @@ export const projects: Project[] = [
     "target": "FY 2085/86 (NPC estimate)",
     "source": "National Planning Commission - National Pride progress, FY 2082/83",
     "sourceUrl": "https://npc.gov.np/content/6836/overall-progress-statement-of-the-project-of/",
-    "image": "/images/nepal-infrastructure.png",
+    "image": "/images/nepal-infrastructure.webp",
     "checklist": [
       {
         "label": "Feasibility & design",
@@ -3711,7 +3711,7 @@ export const projects: Project[] = [
     "target": "FY 2093/94 (NPC estimate)",
     "source": "National Planning Commission - National Pride progress, FY 2082/83",
     "sourceUrl": "https://npc.gov.np/content/6836/overall-progress-statement-of-the-project-of/",
-    "image": "/images/nepal-infrastructure.png",
+    "image": "/images/nepal-infrastructure.webp",
     "changeLog": [
       {
         "date": "11 Sep 2026",
@@ -3947,7 +3947,7 @@ export const projects: Project[] = [
     "target": "FY 2084/85 (NPC estimate)",
     "source": "National Planning Commission - National Pride progress, FY 2082/83",
     "sourceUrl": "https://npc.gov.np/content/6836/overall-progress-statement-of-the-project-of/",
-    "image": "/images/nepal-infrastructure.png",
+    "image": "/images/nepal-infrastructure.webp",
     "changeLog": [
       {
         "date": "FY 2082/83 (2025/26)",

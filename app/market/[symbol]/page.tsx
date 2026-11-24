@@ -12,6 +12,7 @@ import {
   fetchNepseStocks,
 } from '@/lib/nepse'
 import { formatNpr, formatNprOrNA } from '@/lib/currency'
+import { pageMetadata } from '@/lib/seo'
 
 export const revalidate = 3600
 
@@ -20,11 +21,14 @@ export async function generateMetadata({ params }: { params: Promise<{ symbol: s
   const stocks = await fetchNepseStocks()
   const stock = stocks.find(item => item.symbol.toUpperCase() === symbol)
   if (!stock) return { title: 'Stock not found' }
-  return {
-    title: `${stock.symbol} ${stock.companyName} NEPSE share price`,
+  return pageMetadata({
+    title: `${stock.symbol} share price: ${stock.companyName} on NEPSE`,
     description: `${stock.companyName} (${stock.symbol}) on NEPSE: ${formatNprOrNA(formatNpr(stock.ltp))}, ${stock.percentChange >= 0 ? '+' : ''}${stock.percentChange.toFixed(2)}% today. Price history, 52-week range, volume and sector peers.`,
-    alternates: { canonical: `/market/${stock.symbol.toUpperCase()}` },
-  }
+    path: `/market/${stock.symbol.toUpperCase()}`,
+    // ~360 symbol pages churn daily and would eat crawler budget on the small
+    // VM. Reachable for people, kept out of the index on purpose.
+    noindex: true,
+  })
 }
 
 export default async function StockPage({ params }: { params: Promise<{ symbol: string }> }) {

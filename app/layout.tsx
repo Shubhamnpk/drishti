@@ -1,4 +1,3 @@
-import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import { ThemeProvider } from '@/components/theme-provider'
@@ -6,7 +5,8 @@ import { DocumentViewerProvider } from '@/components/document-viewer-provider'
 import { Header } from '@/components/header'
 import { Footer } from '@/components/footer'
 import { WebsiteStructuredData } from '@/components/website-structured-data'
-import { SITE_URL } from '@/lib/site'
+import { OG_IMAGE } from '@/lib/seo'
+import { SITE_NAME, SITE_URL } from '@/lib/site'
 import './globals.css'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
@@ -14,33 +14,36 @@ const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: 'Drishti · Nepal Public Data & Accountability',
-    template: '%s | Drishti',
+    default: `${SITE_NAME} · Nepal Public Data & Accountability`,
+    template: `%s | ${SITE_NAME}`,
   },
   description: 'Explore Nepal public data in one place: government company finances, infrastructure progress, NEPSE, procurement, weather, disasters and official source records.',
-  applicationName: 'Drishti',
+  applicationName: SITE_NAME,
   category: 'public data',
   verification: {
     google: 'EFpFXOWm0uDbsHZn9Zx68YEIj2kVVUUNQ_idK3tzPr0',
   },
+  alternates: { canonical: '/' },
   openGraph: {
     type: 'website',
+    url: SITE_URL,
     locale: 'en_NP',
-    siteName: 'Drishti',
+    siteName: SITE_NAME,
     title: {
-      default: 'Drishti · Nepal Public Data & Accountability',
-      template: '%s | Drishti',
+      default: `${SITE_NAME} · Nepal Public Data & Accountability`,
+      template: `%s | ${SITE_NAME}`,
     },
     description: 'Explore Nepal public data, government company finances, infrastructure progress, markets and live environment feeds.',
-    images: ['/images/nepal-infrastructure.png'],
+    images: [OG_IMAGE],
   },
   twitter: {
     card: 'summary_large_image',
     title: {
-      default: 'Drishti · Nepal Public Data & Accountability',
-      template: '%s | Drishti',
+      default: `${SITE_NAME} · Nepal Public Data & Accountability`,
+      template: `%s | ${SITE_NAME}`,
     },
     description: 'Explore Nepal public data, government company finances, infrastructure progress, markets and live environment feeds.',
+    images: [OG_IMAGE.url],
   },
   robots: { index: true, follow: true },
   icons: {
@@ -71,7 +74,6 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             </div>
           </DocumentViewerProvider>
         </ThemeProvider>
-        {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>
   )

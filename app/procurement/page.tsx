@@ -5,12 +5,13 @@ import { ProcurementTable } from '@/components/procurement-table'
 import { ProcurementYearChart } from '@/components/procurement-chart'
 import { fetchEgpFeed } from '@/lib/egp'
 import { fetchOcdsTenders, summarizeOcds } from '@/lib/ocds'
+import { pageMetadata } from '@/lib/seo'
 
-export const metadata = {
+export const metadata = pageMetadata({
   title: 'Nepal government procurement',
   description: 'Live searchable Nepal government tender notices from the PPMO e-GP portal, with a separate historical OCDS archive.',
-  alternates: { canonical: '/procurement' },
-}
+  path: '/procurement',
+})
 
 export default async function ProcurementPage() {
   const [live, historicalTenders] = await Promise.all([fetchEgpFeed(), fetchOcdsTenders()])

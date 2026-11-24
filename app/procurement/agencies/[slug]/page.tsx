@@ -21,6 +21,7 @@ import { LiveProcurementTable } from '@/components/live-procurement'
 import { fetchEgpFeed, type EgpTender } from '@/lib/egp'
 import { fetchOcdsTenders, type OcdsTender } from '@/lib/ocds'
 import { slugify } from '@/lib/data'
+import { pageMetadata } from '@/lib/seo'
 
 type Props = {
   params: Promise<{ slug: string }>
@@ -52,11 +53,13 @@ export async function generateMetadata({ params }: Props) {
   const feed = await fetchEgpFeed()
   const match = feed.tenders.find(t => slugify(t.office_name) === slug)
   const name = match ? match.office_name : 'Procuring Agency'
-  return {
+  return pageMetadata({
     title: `${name} · Public Procurement & Tenders`,
     description: `Current procurement notices, tenders, and contracts published by ${name} on Nepal's e-GP portal.`,
-    alternates: { canonical: `/procurement/agencies/${slug}` },
-  }
+    path: `/procurement/agencies/${slug}`,
+    // Agency pages are thin and the list churns with every tender refresh.
+    noindex: true,
+  })
 }
 
 export default async function AgencyProcurementPage({ params }: Props) {

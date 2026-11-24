@@ -2,12 +2,13 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { ArrowRight, CircleHelp, ExternalLink, Eye, FileCheck2, Scale } from 'lucide-react'
 import { companies, projects, sources } from '@/lib/data'
+import { pageMetadata } from '@/lib/seo'
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: 'About Drishti and our data methodology',
   description: 'Learn what Drishti stands for, how it brings Nepal public records together, and how to trace figures back to their sources.',
-  alternates: { canonical: '/about' },
-}
+  path: '/about',
+})
 
 const principles = [
   {

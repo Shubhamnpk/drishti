@@ -11,6 +11,9 @@ dist/
 .turbo/
 *.tsbuildinfo
 
+# Local session context for the AI assistant
+CONTEXT.md
+
 # Environment variables & local secrets
 .env
 .env.*

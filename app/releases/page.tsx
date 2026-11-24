@@ -12,11 +12,13 @@ import {
   Sparkles,
   Tag,
 } from 'lucide-react'
+import { pageMetadata } from '@/lib/seo'
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: 'Release history',
   description: 'Version history and release notes for Drishti, Nepal’s public data and civic intelligence platform.',
-}
+  path: '/releases',
+})
 
 type GithubAsset = { name: string; browser_download_url: string; download_count: number; size: number }
 type GithubRelease = {

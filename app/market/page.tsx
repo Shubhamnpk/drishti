@@ -14,12 +14,13 @@ import {
   fetchUpcomingIpos,
   fetchNepseTopBrokers,
 } from '@/lib/nepse'
+import { pageMetadata } from '@/lib/seo'
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: 'NEPSE market today',
   description: 'NEPSE trading floor: every listed security, the turnover heatmap, sector pulse, benchmark indices and the day\u2019s biggest movers.',
-  alternates: { canonical: '/market' },
-}
+  path: '/market',
+})
 
 export const revalidate = 3600
 
