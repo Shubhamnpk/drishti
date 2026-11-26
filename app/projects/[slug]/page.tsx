@@ -88,8 +88,8 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
   const next = idx < projects.length - 1 ? projects[idx + 1] : null
 
   return (
-    <div className="content-wrap">
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
+    <div className="content-wrap project-detail-page">
+      <div className="project-detail-topnav" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
         <Link
           href="/projects"
           className="text-secondary"
@@ -97,11 +97,11 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
         >
           <ArrowLeft size={16} /> Back to projects
         </Link>
-        <div style={{ display: 'flex', gap: '.5rem' }}>
+        <div className="project-detail-pagination" style={{ display: 'flex', gap: '.5rem' }}>
           {prev ? (
             <Link
               href={`/projects/${slugify(prev.name)}`}
-              className="border border-line bg-card text-secondary rounded-[6px]"
+              className="project-step-link border border-line bg-card text-secondary rounded-[6px]"
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -114,14 +114,14 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
               <ArrowLeft size={13} /> {prev.name.length > 20 ? prev.name.slice(0, 20) + '…' : prev.name}
             </Link>
           ) : (
-            <span className="border border-line-light text-tertiary bg-sunken rounded-[6px]" style={{ fontSize: '.72rem', padding: '.4rem .65rem' }}>
+            <span className="project-step-empty border border-line-light text-tertiary bg-sunken rounded-[6px]" style={{ fontSize: '.72rem', padding: '.4rem .65rem' }}>
               No previous
             </span>
           )}
           {next ? (
             <Link
               href={`/projects/${slugify(next.name)}`}
-              className="border border-line bg-card text-secondary rounded-[6px]"
+              className="project-step-link border border-line bg-card text-secondary rounded-[6px]"
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -134,7 +134,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
               {next.name.length > 20 ? next.name.slice(0, 20) + '…' : next.name} <ArrowRight size={13} />
             </Link>
           ) : (
-            <span className="border border-line-light text-tertiary bg-sunken rounded-[6px]" style={{ fontSize: '.72rem', padding: '.4rem .65rem' }}>
+            <span className="project-step-empty border border-line-light text-tertiary bg-sunken rounded-[6px]" style={{ fontSize: '.72rem', padding: '.4rem .65rem' }}>
               No next
             </span>
           )}
@@ -143,13 +143,13 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
 
       {/* Hero image */}
       <section
-        className="bg-card border border-line-light rounded-lg shadow-sm"
+        className="project-detail-hero bg-card border border-line-light rounded-lg shadow-sm"
         style={{
           overflow: 'hidden',
           marginBottom: '1rem',
         }}
       >
-        <div className="bg-sunken" style={{ position: 'relative', height: 'clamp(200px, 32vw, 320px)', overflow: 'hidden' }}>
+        <div className="project-detail-cover bg-sunken" style={{ position: 'relative', height: 'clamp(200px, 32vw, 320px)', overflow: 'hidden' }}>
           <img
             src={project.image}
             alt=""
@@ -162,7 +162,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
               background: 'linear-gradient(to top, rgba(0,0,0,.55) 0%, rgba(0,0,0,.08) 55%, transparent 100%)',
             }}
           />
-          <div className="text-white" style={{ position: 'absolute', left: 'clamp(1rem, 3vw, 1.6rem)', right: 'clamp(1rem, 3vw, 1.6rem)', bottom: 'clamp(1rem, 2.5vw, 1.4rem)' }}>
+          <div className="project-detail-cover-copy text-white" style={{ position: 'absolute', left: 'clamp(1rem, 3vw, 1.6rem)', right: 'clamp(1rem, 3vw, 1.6rem)', bottom: 'clamp(1rem, 2.5vw, 1.4rem)' }}>
             <div style={{ display: 'flex', gap: '.4rem', flexWrap: 'wrap', marginBottom: '.5rem' }}>
               <span
                 className="text-ink rounded-[20px]"
@@ -197,7 +197,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
               </span>
             </div>
             <h1
-              className="font-serif"
+              className="project-detail-title font-serif"
               style={{
                 fontSize: 'clamp(1.5rem, 3vw, 2.1rem)',
                 fontWeight: 500,
@@ -209,15 +209,15 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
             >
               {project.name}
             </h1>
-            <p style={{ margin: '.35rem 0 0', fontSize: '.78rem', opacity: .88, display: 'flex', alignItems: 'center', gap: '.35rem', flexWrap: 'wrap' }}>
+            <p className="project-detail-byline" style={{ margin: '.35rem 0 0', fontSize: '.78rem', opacity: .88, display: 'flex', alignItems: 'center', gap: '.35rem', flexWrap: 'wrap' }}>
               <MapPin size={13} /> {project.ministry} · {project.location}
             </p>
           </div>
         </div>
 
         {/* Hero stats */}
-        <div style={{ padding: '1.1rem clamp(1rem, 3vw, 1.5rem)', display: 'grid', gap: '.85rem' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '.6rem' }}>
+        <div className="project-detail-stat-wrap" style={{ padding: '1.1rem clamp(1rem, 3vw, 1.5rem)', display: 'grid', gap: '.85rem' }}>
+          <div className="project-detail-stat-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '.6rem' }}>
             {[
               { label: 'Budget', value: formatNprText(project.budget), extra: project.budgetNote ? null : parseBudgetCr(project.budget) != null ? formatNpr(parseBudgetCr(project.budget)! * 1e7) : null, note: project.budgetNote },
               { label: 'Spent', value: formatNprText(project.spent), extra: utilizationPct(project.spent, project.budget) != null ? `${utilizationPct(project.spent, project.budget)}% utilized` : parseBudgetCr(project.spent) != null ? formatNpr(parseBudgetCr(project.spent)! * 1e7) : null, note: project.spentNote },
@@ -233,7 +233,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
               </div>
             ))}
           </div>
-          <div>
+          <div className="project-detail-status-row">
             <div className="text-tertiary" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '.66rem', marginBottom: '.3rem' }}>
               <span>Physical progress</span>
               <strong className="text-ink" style={{ fontSize: '.78rem' }}>{projectProgressLabel(project)}</strong>
@@ -246,7 +246,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
         </div>
       </section>
 
-      <div className="detail-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: '1rem', alignItems: 'start' }}>
+      <div className="detail-grid project-detail-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: '1rem', alignItems: 'start' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', minWidth: 0 }}>
           {/* Description */}
           <section className="panel">
@@ -264,6 +264,9 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
               <p className="eyebrow" style={{ margin: 0 }}>GALLERY</p>
               <h2 className="font-serif" style={{ fontWeight: 500, fontSize: '1.1rem', margin: '.2rem 0 0' }}>Project gallery</h2>
               <p className="muted" style={{ marginTop: '.25rem' }}>Browse {projectImages.length} public project {projectImages.length === 1 ? 'photo' : 'photos'}.</p>
+              {project.galleryCredit && project.gallerySourceUrl && <p className="text-tertiary" style={{ margin: '-.35rem 0 .75rem', fontSize: '.63rem' }}>
+                Photos by {project.galleryCredit} · <a href={project.gallerySourceUrl} target="_blank" rel="noreferrer" className="text-primary" style={{ textDecoration: 'underline', textUnderlineOffset: 2 }}>view original photo story</a>
+              </p>}
               <ProjectGallery images={projectImages} projectName={project.name} />
             </section>
           )}
@@ -497,11 +500,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
         </aside>
       </div>
 
-      <style>{`@media (max-width: 900px) {
-  .detail-grid { grid-template-columns: 1fr !important; }
-  .detail-aside { position: static !important; }
-}`}</style>
-      <div className="border-t border-line-light" style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1.5rem', paddingTop: '1rem' }}>
+      <div className="project-detail-footer-nav border-t border-line-light" style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1.5rem', paddingTop: '1rem' }}>
         {prev ? (
           <Link href={`/projects/${slugify(prev.name)}`} className="text-secondary" style={{ display: 'flex', alignItems: 'center', gap: '.5rem', fontSize: '.78rem', fontWeight: 600 }}>
             <ArrowLeft size={14} /> {prev.name}

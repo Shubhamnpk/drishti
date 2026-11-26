@@ -1505,6 +1505,19 @@ export const projects: Project[] = [
     "source": "Nepali Army project chief, reported by Khabarhub",
     "sourceUrl": "https://english.khabarhub.com/2026/18/576065/",
     "image": "https://assets-cdn.kathmandupost.com/uploads/source/news/2026/news/main-1769777905.jpg",
+    "gallery": [
+      "https://assets-cdn.kathmandupost.com/uploads/source/news/2026/news/11-1769777950.jpg",
+      "https://assets-cdn.kathmandupost.com/uploads/source/news/2026/news/22-1769777950.jpg",
+      "https://assets-cdn.kathmandupost.com/uploads/source/news/2026/news/33-1769777972.jpg",
+      "https://assets-cdn.kathmandupost.com/uploads/source/news/2026/news/44-1769777972.jpg",
+      "https://assets-cdn.kathmandupost.com/uploads/source/news/2026/news/55-1769778001.jpg",
+      "https://assets-cdn.kathmandupost.com/uploads/source/news/2026/news/66-1769778001.jpg",
+      "https://assets-cdn.kathmandupost.com/uploads/source/news/2026/news/77-1769778029.jpg",
+      "https://assets-cdn.kathmandupost.com/uploads/source/news/2026/news/88-1769778029.jpg",
+      "https://assets-cdn.kathmandupost.com/uploads/source/news/2026/news/99-1769778052.jpg"
+    ],
+    "galleryCredit": "Hemanta Shrestha / The Kathmandu Post",
+    "gallerySourceUrl": "https://kathmandupost.com/visual-stories/2026/01/30/towering-bridges-rise-over-makawanpur-tunnels",
     "management": {
       "agency": "Nepali Army - fast-track directorate",
       "person": "Project chief: Major General Dharmendra Jha (as reported May 2026)",

@@ -3,7 +3,7 @@
 import {
   ChevronDown, Menu, Search, Sun, Moon, X, ArrowRight, TrendingUp, Building2,
   BarChart3, Map, MapPin, Construction, FileText, CloudSun, AlertTriangle,
-  Calendar, Home, Info,
+  Calendar, Home, Info, Newspaper,
 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
@@ -215,6 +215,10 @@ export function Header() {
             )
           })}
 
+          <Link href="/updates" className={isActive('/updates') ? 'nav-link active' : 'nav-link'} aria-current={isActive('/updates') ? 'page' : undefined} onClick={() => { setOpenMenu(null); setMobileNav(false) }}>
+            Gov News
+          </Link>
+
           <Link
             href="/about"
             className={isActive('/about') ? 'nav-link active' : 'nav-link'}
@@ -321,6 +325,9 @@ export function Header() {
                   })}
                 </div>
               ))}
+              <Link href="/updates" className={isActive('/updates') ? 'active' : ''} onClick={() => setMobileNav(false)}>
+                <Newspaper size={17} /><span>Gov News</span>
+              </Link>
               <Link href="/about" className={isActive('/about') ? 'active' : ''} onClick={() => setMobileNav(false)}>
                 <Info size={17} /><span>About</span>
               </Link>

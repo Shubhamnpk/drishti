@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { ArrowUpRight, Database, ExternalLink, FileArchive } from 'lucide-react'
+import { ArrowUpRight, Database, ExternalLink, FileArchive, Radio } from 'lucide-react'
 import { LiveProcurementTable, ProcurementHighlights } from '@/components/live-procurement'
 import { ProcurementTable } from '@/components/procurement-table'
 import { ProcurementYearChart } from '@/components/procurement-chart'
@@ -17,41 +17,27 @@ export default async function ProcurementPage() {
   const [live, historicalTenders] = await Promise.all([fetchEgpFeed(), fetchOcdsTenders()])
   const historical = summarizeOcds(historicalTenders)
   const liveSummary = live.summary
+  const summaryCards = liveSummary ? [
+    { label: 'Notices in portal', value: liveSummary.total, note: 'All statuses' },
+    { label: 'Open notices', value: liveSummary.open, note: 'Accepting bids' },
+    { label: 'Published opportunities', value: liveSummary.goods_published + liveSummary.works_published, note: `${liveSummary.goods_published.toLocaleString()} goods / ${liveSummary.works_published.toLocaleString()} works` },
+    { label: 'Procurement network', value: liveSummary.approved_public_entities, note: `${liveSummary.approved_bidders.toLocaleString()} approved bidders` },
+  ] : []
 
   return (
     <div className="content-wrap">
-      <div className="eco-hero" style={{ background: 'linear-gradient(135deg, #1e3a5f 0%, #14294a 60%, #0d1c33 100%)' }}>
-        <p style={{ fontSize: '.6rem', letterSpacing: '.16em', fontWeight: 700, opacity: .7, margin: 0 }}>PUBLIC PROCUREMENT · LIVE E-GP</p>
-        <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(1.8rem, 3.5vw, 2.8rem)', fontWeight: 500, letterSpacing: '-.04em', margin: '.3rem 0 .4rem', lineHeight: 1.05 }}>
-          Every rupee, tendered.
-        </h1>
-        <p style={{ fontSize: '.82rem', opacity: .85, margin: 0, maxWidth: 620, lineHeight: 1.6 }}>
-          Search current procurement notices published by Nepal&apos;s Public Procurement Monitoring Office. Live notices link to their official e-GP record.
-        </p>
-        <div style={{ display: 'flex', gap: '.5rem', marginTop: '1rem', flexWrap: 'wrap' }}>
-          <span style={{ background: 'rgba(255,255,255,.14)', borderRadius: 20, padding: '.35rem .8rem', fontSize: '.68rem', fontWeight: 700 }}>
-            {liveSummary ? `${liveSummary.open.toLocaleString()} open notices` : live.total ? `${live.total.toLocaleString()} notices` : 'Live feed unavailable'}
-          </span>
-          <span style={{ background: 'rgba(255,255,255,.14)', borderRadius: 20, padding: '.35rem .8rem', fontSize: '.68rem', fontWeight: 700 }}>
-            Updated from e-GP · 30-minute cache
-          </span>
+      <header className="projects-header procurement-header">
+        <div>
+          <p className="eyebrow"><Radio size={12} /> PUBLIC PROCUREMENT / NEPAL</p>
+          <h1>Government tenders</h1>
+          <p className="projects-intro">Explore current notices from the PPMO e-GP portal, follow deadlines and amendments, and inspect tender documents and schedules.</p>
         </div>
-      </div>
+        <a href="https://bolpatra.gov.np/projects" target="_blank" rel="noreferrer" className="projects-map-link">Open official e-GP <ExternalLink size={14} /></a>
+      </header>
 
-      {liveSummary && (
-        <section className="grid-auto" style={{ marginTop: '.75rem', marginBottom: '.75rem' }}>
-          {[
-            { label: 'Open procurement notices', value: liveSummary.open.toLocaleString() },
-            { label: 'Approved public entities', value: liveSummary.approved_public_entities.toLocaleString() },
-          ].map(card => (
-            <div key={card.label} className="bg-card border border-line-light rounded-lg shadow-sm" style={{ padding: '.85rem .95rem' }}>
-              <span className="text-secondary" style={{ display: 'block', fontSize: '.64rem', fontWeight: 500 }}>{card.label}</span>
-              <strong style={{ display: 'block', fontSize: '1.3rem', letterSpacing: '-.03em', marginTop: '.25rem' }}>{card.value}</strong>
-            </div>
-          ))}
-        </section>
-      )}
-
+      {summaryCards.length > 0 && <section className="projects-summary procurement-summary" aria-label="Live e-GP overview">
+        {summaryCards.map(card => <div key={card.label}><span>{card.label}</span><strong>{card.value.toLocaleString()}</strong><small>{card.note}</small></div>)}
+      </section>}
       {!live.tenders.length ? (
         <section className="panel" style={{ marginBottom: '.75rem' }}>
           <div style={{ padding: '1.5rem', textAlign: 'center' }}>

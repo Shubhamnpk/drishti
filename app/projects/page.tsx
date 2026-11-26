@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { Search, FolderKanban, Eye, ChevronRight } from 'lucide-react'
+import { Search, FolderKanban, Eye, ChevronRight, Map, X } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import { StatusBadge } from '@/components/shared'
 import { DetailDrawer } from '@/components/detail-drawer'
@@ -11,7 +11,7 @@ import { HydroAtlas } from '@/components/hydro-atlas'
 import { projects, slugify, parseBudgetCr, utilizationPct, PROVINCES, PROJECT_FX_NOTE, PROJECT_FX_SOURCE } from '@/lib/data'
 import { matchDistricts } from '@/lib/geo'
 import { fetchWbProjectCount } from '@/lib/api'
-import { formatNprText, formatNpr } from '@/lib/currency'
+import { formatNprText } from '@/lib/currency'
 
 const NepalMapReal = dynamic(() => import('@/components/nepal-map-real').then(m => m.NepalMapReal), {
   ssr: false,
@@ -21,44 +21,7 @@ import type { Project } from '@/lib/types'
 
 const STATUS_FILTERS = ['All', 'Completed', 'On track', 'At risk', 'Delayed'] as const
 const CATEGORY_FILTERS = ['All', 'Hydropower', 'Power', 'Highway', 'Airport', 'Irrigation', 'Water', 'Heritage', 'Sports', 'Rail', 'Conservation'] as const
-const SORTS = ['Newest', 'Budget ↓', 'Budget ↑', 'Progress ↓', 'Progress ↑', 'Name A-Z'] as const
-
-/** Glass spotlight card: live portfolio totals + the build needing attention. */
-function HeroSpotlight({ counts, wbCount }: { counts: { total: number; completed: number; onTrack: number; atRisk: number; delayed: number }; wbCount: number | null }) {
-  const budgeted = projects.map(p => parseBudgetCr(p.budget)).filter((v): v is number => v != null)
-  const totalCr = budgeted.reduce((a, b) => a + b, 0)
-  const totalLabel = formatNpr(totalCr * 1e7)
-  const withProgress = projects.filter((p): p is typeof p & { progress: number } => p.progress != null)
-  const avg = Math.round(withProgress.reduce((a, p) => a + p.progress, 0) / Math.max(1, withProgress.length))
-  const spotlight = [...projects]
-    .filter(p => (p.status === 'Delayed' || p.status === 'At risk') && p.progress != null)
-    .sort((a, b) => (a.progress ?? 0) - (b.progress ?? 0))[0]
-  return (
-    <div style={{ background: 'rgba(255,255,255,.1)', border: '1px solid rgba(255,255,255,.22)', borderRadius: 16, padding: '1.1rem 1.2rem', backdropFilter: 'blur(10px)' }}>
-      <p style={{ margin: 0, fontSize: '.58rem', fontWeight: 700, letterSpacing: '.12em', opacity: .7 }}>PORTFOLIO VALUE TRACKED</p>
-      <strong style={{ display: 'block', fontSize: '1.5rem', letterSpacing: '-.03em', marginTop: '.15rem' }}>{totalLabel}</strong>
-      <div style={{ display: 'flex', gap: '1.25rem', marginTop: '.6rem' }}>
-        <span style={{ fontSize: '.7rem' }}><strong>{avg}%</strong> <span style={{ opacity: .7 }}>avg progress</span></span>
-        <span style={{ fontSize: '.7rem' }}><strong>{wbCount ?? '-'}</strong> <span style={{ opacity: .7 }}>WB projects</span></span>
-      </div>
-      {spotlight && (
-        <Link
-          href={`/projects/${slugify(spotlight.name)}`}
-          style={{ display: 'block', marginTop: '.8rem', padding: '.65rem .75rem', borderRadius: 10, background: 'rgba(0,0,0,.25)', textDecoration: 'none', color: '#fff' }}
-        >
-          <span style={{ fontSize: '.58rem', fontWeight: 700, letterSpacing: '.1em', opacity: .7 }}>NEEDS ATTENTION</span>
-          <strong style={{ display: 'block', fontSize: '.8rem', marginTop: '.15rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{spotlight.name}</strong>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '.45rem', marginTop: '.4rem' }}>
-            <span style={{ flex: 1, height: 5, borderRadius: 99, background: 'rgba(255,255,255,.2)', overflow: 'hidden' }}>
-              <span style={{ display: 'block', height: '100%', width: `${spotlight.progress ?? 0}%`, background: '#f87171', borderRadius: 99 }} />
-            </span>
-            <span style={{ fontSize: '.66rem', fontWeight: 700 }}>{spotlight.progress ?? 'Not reported'}{spotlight.progress != null ? '%' : ''}</span>
-          </span>
-        </Link>
-      )}
-    </div>
-  )
-}
+const SORTS = ['Newest', 'Budget: high to low', 'Budget: low to high', 'Progress: high to low', 'Progress: low to high', 'Name A-Z'] as const
 
 export default function ProjectsPage() {
   const [query, setQuery] = useState('')
@@ -66,7 +29,7 @@ export default function ProjectsPage() {
   const [catFilter, setCatFilter] = useState<(typeof CATEGORY_FILTERS)[number]>('All')
   const [provinceFilter, setProvinceFilter] = useState<string>('All')
   const [districtFilter, setDistrictFilter] = useState<string | null>(null)
-  const [showMap, setShowMap] = useState(true)
+  const [showMap, setShowMap] = useState(false)
   const [sort, setSort] = useState<(typeof SORTS)[number]>('Newest')
   const [selected, setSelected] = useState<Project | null>(null)
   const [quarter, setQuarter] = useState('Q1')
@@ -98,19 +61,19 @@ export default function ProjectsPage() {
         (catFilter === 'All' || x.category === catFilter) &&
         (provinceFilter === 'All' || x.province === provinceFilter) &&
         (districtFilter == null || matchDistricts(`${x.name} ${x.location} ${x.ministry}`).includes(districtFilter)) &&
-        `${x.name} ${x.ministry} ${x.location}`.toLowerCase().includes(query.toLowerCase())
+        `${x.name} ${x.ministry} ${x.location} ${x.category}`.toLowerCase().includes(query.trim().toLowerCase())
     )
-    if (sort === 'Budget ↓' || sort === 'Budget ↑') {
+    if (sort === 'Budget: high to low' || sort === 'Budget: low to high') {
       out = [...out].sort((a, b) => {
         const av = parseBudgetCr(a.budget) ?? -1
         const bv = parseBudgetCr(b.budget) ?? -1
-        return sort === 'Budget ↓' ? bv - av : av - bv
+        return sort === 'Budget: high to low' ? bv - av : av - bv
       })
-    } else if (sort === 'Progress ↓' || sort === 'Progress ↑') {
+    } else if (sort === 'Progress: high to low' || sort === 'Progress: low to high') {
       out = [...out].sort((a, b) => {
         const av = a.progress ?? -1
         const bv = b.progress ?? -1
-        return sort === 'Progress ↓' ? bv - av : av - bv
+        return sort === 'Progress: high to low' ? bv - av : av - bv
       })
     } else if (sort === 'Name A-Z') {
       out = [...out].sort((a, b) => a.name.localeCompare(b.name))
@@ -131,161 +94,47 @@ export default function ProjectsPage() {
     delayed: projects.filter(p => p.status === 'Delayed').length,
     completed: projects.filter(p => p.status === 'Completed').length,
   }
+  const hasActiveFilters = Boolean(query.trim()) || statusFilter !== 'All' || catFilter !== 'All' || provinceFilter !== 'All' || districtFilter != null
 
   return (
     <div className="content-wrap">
       {/* ── Hero ── */}
-      <div className="eco-hero" style={{ background: 'linear-gradient(135deg, #9a3412 0%, #7c2d12 55%, #431407 100%)', overflow: 'hidden', position: 'relative' }}>
-        <div style={{ position: 'absolute', top: -70, right: -40, width: 300, height: 300, borderRadius: '50%', background: 'radial-gradient(circle, rgba(251,191,36,.28) 0%, transparent 70%)', pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', bottom: -90, left: '30%', width: 260, height: 260, borderRadius: '50%', background: 'radial-gradient(circle, rgba(248,113,113,.18) 0%, transparent 70%)', pointerEvents: 'none' }} />
-        <div style={{ display: 'grid', gridTemplateColumns: '1.15fr .85fr', gap: '1.75rem', alignItems: 'center', position: 'relative' }} className="proj-hero-grid">
-          <div>
-            <p style={{ fontSize: '.6rem', letterSpacing: '.16em', fontWeight: 700, opacity: .7, margin: 0 }}>NATIONAL DEVELOPMENT · {counts.total} PROJECTS</p>
-            <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(1.9rem, 3.6vw, 3rem)', fontWeight: 500, letterSpacing: '-.04em', margin: '.3rem 0 .4rem', lineHeight: 1.04 }}>
-              Building the nation,<br />project by project.
-            </h1>
-            <p style={{ fontSize: '.82rem', opacity: .85, margin: 0, maxWidth: 520, lineHeight: 1.6 }}>
-              Highways, hydropower, airports and irrigation: physical progress, budgets and evidence for every flagship build.
-              {wbCount ? ` Plus ${wbCount} World Bank–financed projects in the portfolio.` : ''}
-            </p>
-            <div style={{ display: 'flex', gap: '.55rem', marginTop: '1.1rem', flexWrap: 'wrap' }}>
-              <Link href="/map" style={{ display: 'inline-flex', alignItems: 'center', gap: '.4rem', background: '#fff', color: '#7c2d12', fontSize: '.76rem', fontWeight: 800, padding: '.6rem 1.05rem', borderRadius: 10 }}>
-                🗺 Open national map
-              </Link>
-              <a href="#tracker" style={{ display: 'inline-flex', alignItems: 'center', gap: '.4rem', border: '1px solid rgba(255,255,255,.4)', color: '#fff', fontSize: '.76rem', fontWeight: 700, padding: '.6rem 1.05rem', borderRadius: 10 }}>
-                Browse the list ↓
-              </a>
-            </div>
-          </div>
-          <HeroSpotlight counts={counts} wbCount={wbCount} />
-        </div>
-        <div style={{ display: 'flex', height: 10, borderRadius: 99, overflow: 'hidden', marginTop: '1.25rem', background: 'rgba(255,255,255,.16)', position: 'relative' }}>
-          {[
-            { count: counts.completed, color: '#4ade80' },
-            { count: counts.onTrack, color: '#a7f3d0' },
-            { count: counts.atRisk, color: '#fbbf24' },
-            { count: counts.delayed, color: '#f87171' },
-          ].map((s, i) => (
-            <span key={i} style={{ width: `${(s.count / Math.max(1, counts.total)) * 100}%`, background: s.color }} />
-          ))}
-        </div>
-        <div style={{ display: 'flex', gap: '1rem', marginTop: '.55rem', flexWrap: 'wrap', fontSize: '.68rem', fontWeight: 700, position: 'relative' }}>
-          <span>● {counts.completed} completed</span>
-          <span>● {counts.onTrack} on track</span>
-          <span>● {counts.atRisk} at risk</span>
-          <span>● {counts.delayed} delayed</span>
-        </div>
-      </div>
-
-      <section id="tracker" className="full-panel panel" style={{ scrollMarginTop: 80 }}>
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow">TRACKER</p>
-            <h2>Find a project</h2>
-          </div>
-          <span className="muted" style={{ fontSize: '.68rem' }}>
-            {filtered.length} of {projects.length} shown
-          </span>
-        </div>
-        <p className="muted" style={{ fontSize: '.64rem', margin: '.35rem 0 0', lineHeight: 1.5 }}>
-          National Pride figures use the NPC cumulative progress report through FY 2082/83; other majors may use different reporting dates. {PROJECT_FX_NOTE} <a href={PROJECT_FX_SOURCE} target="_blank" rel="noreferrer" style={{ textDecoration: 'underline' }}>Rate source</a>
-        </p>
-
-        <div style={{ display: 'flex', gap: '.5rem', marginTop: '.85rem', flexWrap: 'wrap' }}>
-          <button
-            onClick={() => setShowMap(v => !v)}
-            className="border border-line rounded-[8px]"
-            style={{
-              display: 'inline-flex', alignItems: 'center', gap: '.35rem',
-              fontSize: '.72rem', fontWeight: 700, padding: '.45rem .75rem',
-              background: showMap ? 'var(--accent)' : 'var(--bg-elevated)',
-              color: showMap ? '#fff' : 'var(--text-secondary)', cursor: 'pointer',
-            }}
-          >
-            {showMap ? '🗺 Hide map' : '🗺 Show map'} {provinceFilter !== 'All' ? `· ${provinceFilter}` : ''}
-          </button>
-          {provinceFilter !== 'All' && (
-            <button onClick={() => selectProvince('All')} className="text-accent bg-accent-light rounded-[6px] border border-accent" style={{ fontSize: '.72rem', fontWeight: 600, padding: '.35rem .6rem', cursor: 'pointer' }}>
-              Clear province ✕
-            </button>
-          )}
-        </div>
-
-        {showMap && (
-          <div style={{ marginTop: '.75rem' }}>
-            <NepalMapReal selected={provinceFilter} onSelect={selectProvince} counts={provinceCounts} />
-          </div>
-        )}
-
-        {isConcreteProvince && (
-          <DistrictDrilldown
-            province={provinceFilter}
-            items={provinceItems}
-            selected={districtFilter}
-            onSelect={setDistrictFilter}
-          />
-        )}
-
-        <div style={{ display: 'flex', gap: '.75rem', alignItems: 'center', flexWrap: 'wrap', marginTop: '.75rem' }}>
-          <label className="search" style={{ maxWidth: '280px' }}>
-            <Search size={16} />
-            <input
-              aria-label="Search projects"
-              placeholder="Search by name, ministry, location..."
-              value={query}
-              onChange={e => setQuery(e.target.value)}
-            />
+      <header className="projects-header">
+        <div><p className="eyebrow">PUBLIC INFRASTRUCTURE &middot; NEPAL</p><h1>National projects</h1><p className="projects-intro">Follow major public works, their reported progress, budgets and latest evidence.</p></div>
+        <Link href="/map" className="projects-map-link"><Map size={16} /> Open national map <ChevronRight size={15} /></Link>
+      </header>
+      <section className="projects-summary" aria-label="Portfolio summary">
+        <div><span>Projects tracked</span><strong>{counts.total}</strong><small>{wbCount ? '+ ' + wbCount + ' World Bank projects' : 'National portfolio'}</small></div>
+        <div><span>On track</span><strong>{counts.onTrack}</strong><small>Current status</small></div>
+        <div><span>Need attention</span><strong>{counts.atRisk + counts.delayed}</strong><small>{counts.atRisk} at risk &middot; {counts.delayed} delayed</small></div>
+        <div><span>Completed</span><strong>{counts.completed}</strong><small>Reported complete</small></div>
+      </section>
+      <section id="tracker" className="projects-tracker" style={{ scrollMarginTop: 80 }}>
+        <div className="section-heading"><div><p className="eyebrow">PROJECT DIRECTORY</p><h2>Explore the portfolio</h2></div><span className="projects-result-count" aria-live="polite">{filtered.length} of {projects.length} projects</span></div>
+        <details className="projects-data-note">
+          <summary>About project data and reporting dates</summary>
+          <p>National Pride figures use the NPC cumulative progress report through FY 2082/83; other projects may use different reporting dates. {PROJECT_FX_NOTE} <a href={PROJECT_FX_SOURCE} target="_blank" rel="noreferrer">Rate source</a></p>
+        </details>
+        <div className="projects-toolbar">
+          <label className="search projects-search">
+            <Search size={16} aria-hidden="true" />
+            <input aria-label="Search projects" placeholder="Search project, agency, location or sector" value={query} onChange={e => setQuery(e.target.value)} />
+            {query && <button type="button" aria-label="Clear search" onClick={() => setQuery('')}><X size={15} /></button>}
           </label>
-          {query && (
-            <button
-              onClick={() => setQuery('')}
-              className="text-primary bg-primary-50 rounded-[6px]"
-              style={{
-                fontSize: '.72rem',
-                fontWeight: 600,
-                padding: '.3rem .55rem',
-              }}
-            >
-              Clear
-            </button>
-          )}
-          <select
-            aria-label="Sort projects"
-            value={sort}
-            onChange={e => setSort(e.target.value as typeof sort)}
-            className="border border-line bg-card text-secondary rounded-[6px]"
-            style={{
-              marginLeft: 'auto',
-              fontSize: '.72rem',
-              fontWeight: 600,
-              padding: '.4rem .6rem',
-            }}
-          >
-            {SORTS.map(s => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
+          <select aria-label="Filter projects by sector" value={catFilter} onChange={e => setCatFilter(e.target.value as typeof catFilter)}>{CATEGORY_FILTERS.map(f => <option key={f} value={f}>{f === 'All' ? 'All sectors' : f}</option>)}</select>
+          <select aria-label="Filter projects by province" value={provinceFilter} onChange={e => selectProvince(e.target.value)}><option value="All">All provinces</option><option value="National">National</option>{PROVINCES.map(p => <option key={p} value={p}>{p}</option>)}</select>
+          <select aria-label="Sort projects" value={sort} onChange={e => setSort(e.target.value as typeof sort)}>{SORTS.map(s => <option key={s} value={s}>{s === 'Newest' ? 'Latest first' : s}</option>)}</select>
+          <button type="button" className={showMap ? 'projects-map-toggle is-active' : 'projects-map-toggle'} onClick={() => setShowMap(v => !v)} aria-expanded={showMap}><Map size={15} /> {showMap ? 'Hide map' : 'Map'}</button>
         </div>
-
-        <div className="quarter-tabs" style={{ marginTop: '.6rem', flexWrap: 'wrap' }}>
-          {STATUS_FILTERS.map(f => (
-            <button key={f} className={statusFilter === f ? 'selected' : ''} onClick={() => setStatusFilter(f)}>
-              {f}
-              {f !== 'All' && ` (${projects.filter(p => p.status === f).length})`}
-            </button>
-          ))}
+        <div className="projects-filter-row">
+          <span className="projects-filter-label">Status</span>
+          <div className="projects-status-filters" aria-label="Filter by status">
+            {STATUS_FILTERS.map(f => <button key={f} type="button" aria-pressed={statusFilter === f} className={statusFilter === f ? 'selected' : ''} onClick={() => setStatusFilter(f)}>{f}<span>{f !== 'All' ? projects.filter(p => p.status === f).length : projects.length}</span></button>)}
+          </div>
+          {hasActiveFilters && <button type="button" className="projects-reset" onClick={() => { setQuery(''); setStatusFilter('All'); setCatFilter('All'); setSort('Newest'); selectProvince('All') }}>Clear filters <X size={13} /></button>}
         </div>
-
-        <div className="quarter-tabs" style={{ marginTop: '.4rem', flexWrap: 'wrap' }}>
-          {CATEGORY_FILTERS.map(f => (
-            <button key={f} className={catFilter === f ? 'selected' : ''} onClick={() => setCatFilter(f)}>
-              {f}
-            </button>
-          ))}
-        </div>
-
+        {showMap && <div className="projects-map-panel"><NepalMapReal selected={provinceFilter} onSelect={selectProvince} counts={provinceCounts} /></div>}
+        {isConcreteProvince && <DistrictDrilldown province={provinceFilter} items={provinceItems} selected={districtFilter} onSelect={setDistrictFilter} />}
         {filtered.length === 0 ? (
           <div
             className="bg-sunken rounded-lg border border-dashed border-line"
@@ -331,111 +180,36 @@ export default function ProjectsPage() {
                 >
                   <img src={p.image} alt={p.name} />
                   <div className="project-top">
-                    <span
-                      className="rounded-[20px] bg-sunken text-secondary border border-line-light"
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '.3rem',
-                        fontSize: '.62rem',
-                        fontWeight: 600,
-                        padding: '.2rem .5rem',
-                      }}
-                    >
-                      <FolderKanban size={11} /> {p.category}
-                    </span>
+                    <span className="project-sector"><FolderKanban size={13} /> {p.category}</span>
                     <StatusBadge status={p.status} />
                   </div>
-                  <h3 style={{ marginTop: '.7rem' }}>{p.name}</h3>
-                  <p style={{ marginBottom: '.4rem' }}>
-                    {p.ministry} · {p.location}
-                  </p>
-                  {p.description && (
-                    <p
-                      className="text-secondary"
-                      style={{
-                        fontSize: '.72rem',
-                        lineHeight: 1.5,
-                        margin: '.35rem 0 .6rem',
-                        display: '-webkit-box',
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: 'vertical',
-                        overflow: 'hidden',
-                      }}
-                    >
-                      {p.description}
-                    </p>
-                  )}
+                  <h3 className="project-card-title">{p.name}</h3>
+                  <p className="project-card-location">{p.location}{p.province && p.province !== 'National' ? ', ' + p.province : ''}</p>
                   <div className="project-progress">
-                    <div>
-                      <span>Physical progress</span>
-                      <strong>{p.progress == null ? 'Not reported' : `${p.progress}%`}</strong>
-                    </div>
+                    <div><span>Reported progress</span><strong>{p.progress == null ? 'Not reported' : p.progress + '%'}</strong></div>
+                    {p.progress != null && <div className="project-progress-track"><span style={{ width: Math.min(100, Math.max(0, p.progress)) + '%' }} /></div>}
                   </div>
-                  <div className="project-meta">
-                    <span>
-                      Budget <strong>{formatNprText(p.budget)}</strong>
-                    </span>
-                    <span>
-                      Spent <strong>{formatNprText(p.spent)}</strong>
-                      {utilizationPct(p.spent, p.budget) != null && (
-                        <span
-                          className="rounded-[20px]"
-                          style={{
-                            marginLeft: '.3rem',
-                            fontSize: '.62rem',
-                            fontWeight: 700,
-                            padding: '.12rem .35rem',
-                            background: utilizationPct(p.spent, p.budget)! > 70 ? 'var(--primary-50)' : utilizationPct(p.spent, p.budget)! > 40 ? 'var(--warning-light)' : 'var(--danger-light)',
-                            color: utilizationPct(p.spent, p.budget)! > 70 ? 'var(--primary)' : utilizationPct(p.spent, p.budget)! > 40 ? 'var(--warning)' : 'var(--danger)',
-                          }}
-                        >
-                          {utilizationPct(p.spent, p.budget)}%
-                        </span>
-                      )}
-                    </span>
+                  <div className="project-card-metrics">
+                    <div><span>Approved budget</span><strong>{formatNprText(p.budget)}</strong></div>
+                    <div><span>Target</span><strong>{p.target}</strong></div>
                   </div>
-                  <div className="project-meta">
-                    <span>
-                      Target <strong>{p.target}</strong>
-                    </span>
-                    <span>
-                      Updated <strong>{p.updated}</strong>
-                    </span>
-                  </div>
-                  {Array.from(new Set([p.image, ...(p.gallery ?? [])])).length > 1 && (
-                    <div className="rounded-[6px]" style={{ display: 'flex', gap: 4, marginTop: '.6rem', overflow: 'hidden' }}>
-                      {Array.from(new Set([p.image, ...(p.gallery ?? [])])).slice(1, 4).map(src => (
-                        <img key={src} src={src} alt="" className="rounded-[4px] border border-line-light" style={{ width: 56, height: 40, objectFit: 'cover', flexShrink: 0 }} loading="lazy" />
-                      ))}
-                    </div>
-                  )}
+                  <div className="project-card-updated">Updated {p.updated} - {p.ministry}</div>
                   <div className="text-primary" style={{ display: 'flex', alignItems: 'center', gap: '.3rem', marginTop: '.7rem', fontSize: '.68rem', fontWeight: 600 }}>
                     View details <ChevronRight size={13} />
                   </div>
                 </Link>
                 <button
                   type="button"
-                  aria-label={`Quick preview ${p.name}`}
-                  title="Quick preview"
+                  aria-label={`Quick view ${p.name}`}
+                  title="Quick view"
                   onClick={e => {
                     e.preventDefault()
                     setSelected(p)
                   }}
-                  className="rounded-[6px] text-secondary border border-line shadow-sm"
-                  style={{
-                    position: 'absolute',
-                    top: 10,
-                    right: 10,
-                    width: 28,
-                    height: 28,
-                    display: 'grid',
-                    placeItems: 'center',
-                    background: 'rgba(255,255,255,.92)',
-                    backdropFilter: 'blur(6px)',
-                  }}
+                  className="project-quick-view"
                 >
-                  <Eye size={14} />
+                  <Eye size={16} strokeWidth={2.4} />
+                  <span>Quick view</span>
                 </button>
               </div>
             ))}

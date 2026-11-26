@@ -111,6 +111,8 @@ export type Project = {
   sourceUrl: string
   image: string
   gallery?: string[]
+  galleryCredit?: string
+  gallerySourceUrl?: string
   changeLog?: ProjectChange[]
   completionNote?: string
   contractors?: ProjectContractor[]
