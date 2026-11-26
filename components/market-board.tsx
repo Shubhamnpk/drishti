@@ -466,10 +466,10 @@ export function MarketBoard({
         )
       },
     },
-    { key: 'volume', label: 'Volume', render: stock => stock.volume ? formatNum(stock.volume) : '—' },
-    { key: 'turnover', label: 'Turnover', render: stock => stock.turnover ? formatNpr(stock.turnover) : '—' },
-    { key: 'cap', label: 'Market cap', render: stock => stock.marketCap ? formatNpr(stock.marketCap) : '—' },
-    { key: 'trades', label: 'Trades', render: stock => stock.trades ? formatNum(stock.trades) : '—' },
+    { key: 'volume', label: 'Volume', render: stock => stock.volume ? formatNum(stock.volume) : 'N/A' },
+    { key: 'turnover', label: 'Turnover', render: stock => stock.turnover ? formatNpr(stock.turnover) : 'N/A' },
+    { key: 'cap', label: 'Market cap', render: stock => stock.marketCap ? formatNpr(stock.marketCap) : 'N/A' },
+    { key: 'trades', label: 'Trades', render: stock => stock.trades ? formatNum(stock.trades) : 'N/A' },
   ]
 
   const maxMove = Math.max(1, ...topGainers.slice(0, 6).map(stock => Math.abs(stock.percentChange ?? 0)), ...topLosers.slice(0, 6).map(stock => Math.abs(stock.percentChange ?? 0)))
@@ -570,7 +570,7 @@ export function MarketBoard({
               <>
                 <span>&middot;</span>
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: '.25rem' }}>
-                  <Clock size={11} /> feed {fmtStamp(lastChecked)}
+                  <Clock size={11} /> status checked {fmtStamp(lastChecked)}
                 </span>
               </>
             )}
@@ -578,7 +578,7 @@ export function MarketBoard({
 
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '.65rem', flexWrap: 'wrap', marginTop: '.55rem' }}>
             <strong style={{ fontSize: 'clamp(2rem, 4vw, 2.9rem)', lineHeight: 1.02, letterSpacing: '-.045em', fontVariantNumeric: 'tabular-nums' }}>
-              {headline ? grouped(headline.close) : '—'}
+              {headline ? grouped(headline.close) : 'N/A'}
             </strong>
             {headline && (
               <span className={dayUp ? 'positive' : 'negative'} style={{ display: 'inline-flex', alignItems: 'center', gap: '.2rem', fontSize: '.82rem', fontWeight: 700 }}>
@@ -662,25 +662,25 @@ export function MarketBoard({
         <div className="metric-card accent">
           <Landmark size={16} />
           <p>Total turnover</p>
-          <strong>{summary?.totalTurnover ? formatNpr(summary.totalTurnover) : '—'}</strong>
+          <strong>{summary?.totalTurnover ? formatNpr(summary.totalTurnover) : 'N/A'}</strong>
           <span>{summary?.scripsTraded ? `${formatNum(summary.scripsTraded)} scrips traded` : "Today's traded value"}</span>
         </div>
         <div className="metric-card">
           <Activity size={16} />
           <p>Shares traded</p>
-          <strong>{summary?.totalVolume ? formatNum(summary.totalVolume) : '—'}</strong>
+          <strong>{summary?.totalVolume ? formatNum(summary.totalVolume) : 'N/A'}</strong>
           <span>{traded.length} securities with volume</span>
         </div>
         <div className="metric-card">
           <Layers size={16} />
           <p>Transactions</p>
-          <strong>{summary?.totalTrades ? formatNum(summary.totalTrades) : '—'}</strong>
+          <strong>{summary?.totalTrades ? formatNum(summary.totalTrades) : 'N/A'}</strong>
           <span>{summary?.totalTrades && summary.totalTurnover ? `${formatNpr(summary.totalTurnover / summary.totalTrades)} avg ticket` : 'Contracts matched'}</span>
         </div>
         <div className="metric-card">
           <Flame size={16} />
           <p>Market capitalisation</p>
-          <strong>{summary?.marketCap ? formatNpr(summary.marketCap) : '—'}</strong>
+          <strong>{summary?.marketCap ? formatNpr(summary.marketCap) : 'N/A'}</strong>
           <span>{advance} up / {decline} down</span>
         </div>
       </div>
@@ -814,7 +814,7 @@ export function MarketBoard({
             </div>
             <div style={{ textAlign: 'right' }}>
               <span style={{ display: 'block', fontSize: '.56rem', textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--text-tertiary)' }}>Average</span>
-              <strong style={{ fontSize: '.82rem', fontVariantNumeric: 'tabular-nums' }}>{historyAverage ? formatNpr(historyAverage) : '—'}</strong>
+              <strong style={{ fontSize: '.82rem', fontVariantNumeric: 'tabular-nums' }}>{historyAverage ? formatNpr(historyAverage) : 'N/A'}</strong>
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: 3, height: 150, marginTop: '1rem', borderBottom: '1px solid var(--border-light)', paddingBottom: 1 }}>
@@ -892,7 +892,7 @@ export function MarketBoard({
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '.5rem', marginTop: '.8rem', fontSize: '.64rem' }}>
             <div>
               <span style={{ display: 'block', color: 'var(--text-tertiary)', fontSize: '.56rem', textTransform: 'uppercase', letterSpacing: '.05em' }}>A/D ratio</span>
-              <strong>{decline ? (advance / decline).toFixed(2) : '—'}</strong>
+              <strong>{decline ? (advance / decline).toFixed(2) : 'N/A'}</strong>
             </div>
             <div>
               <span style={{ display: 'block', color: 'var(--text-tertiary)', fontSize: '.56rem', textTransform: 'uppercase', letterSpacing: '.05em' }}>Scrips traded</span>

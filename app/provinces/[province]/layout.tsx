@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { PROVINCES } from '@/lib/geo-constants'
+import { PROVINCE_SEO } from '@/lib/place-seo'
 import { pageMetadata } from '@/lib/seo'
 
 export async function generateMetadata({ params }: { params: Promise<{ province: string }> }): Promise<Metadata> {
@@ -8,7 +9,9 @@ export async function generateMetadata({ params }: { params: Promise<{ province:
   if (!province) return { title: 'Province not found', robots: { index: false, follow: true } }
   return pageMetadata({
     title: `${province.name} Province profile and public data`,
-    description: `Explore ${province.name} Province, Nepal: district profiles, local units, population and census data, weather, maps and nearby places.`,
+    description:
+      PROVINCE_SEO[province.slug] ??
+      `District profiles, local units, population and census data, weather, maps and nearby places across ${province.name} Province, Nepal.`,
     path: `/provinces/${province.slug}`,
   })
 }

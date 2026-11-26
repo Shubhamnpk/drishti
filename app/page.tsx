@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { ArrowRight, ArrowUpRight, CircleAlert, Database, FileText, FolderKanban, Globe2, TrendingUp, TrendingDown, CloudSun, Landmark } from 'lucide-react'
 import { StatusBadge } from '@/components/shared'
-import { companies, projects, parseBudgetCr, sources } from '@/lib/data'
+import { companies, projects, parseBudgetCr, projectProgressLabel, sources } from '@/lib/data'
 import { getNrbUsdRate } from '@/lib/nrb'
 import { fetchNepseIndex, fetchNepseStocks } from '@/lib/nepse'
 import { nptTime12 } from '@/lib/calendar'
@@ -241,7 +241,7 @@ export default function HomePage() {
             <CircleAlert style={{ color: 'var(--danger)' }} size={20} />
           </div>
           {signalProject && (
-            <div className="signal"><div className="signal-number">01</div><div><strong>{signalProject.name}</strong><p>Physical progress {signalProject.progress}% · target {formatNprText(signalProject.target)}.</p><StatusBadge status={signalProject.status} /></div></div>
+            <div className="signal"><div className="signal-number">01</div><div><strong>{signalProject.name}</strong><p>Physical progress {projectProgressLabel(signalProject)} · target {formatNprText(signalProject.target)}.</p><StatusBadge status={signalProject.status} /></div></div>
           )}
           {signalCompany && (
             <div className="signal"><div className="signal-number">02</div><div><strong>{signalCompany.name}</strong><p>{formatNprText(signalCompany.result)} · {signalCompany.year}.</p><StatusBadge status={signalCompany.operatingStatus} /></div></div>

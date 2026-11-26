@@ -9,7 +9,9 @@ import {
 import type { NepseMarketPulse } from '@/lib/types'
 import { cdnCache } from '@/lib/cache'
 
-export const revalidate = 3600
+const MARKET_REVALIDATE_SECONDS = 300
+
+export const revalidate = MARKET_REVALIDATE_SECONDS
 
 const SECTOR_LABELS: Record<string, string> = {
   'open_ended_mutual_fund': 'Open-end mutual funds',
@@ -90,6 +92,6 @@ export async function GET() {
   }
 
   return NextResponse.json(payload, {
-    headers: cdnCache(3600),
+    headers: cdnCache(MARKET_REVALIDATE_SECONDS, MARKET_REVALIDATE_SECONDS),
   })
 }

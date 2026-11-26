@@ -165,10 +165,10 @@ export default function PalikaPage() {
       </section>
 
       <section className="place-stats">
-        <Stat icon={<Users size={15} />} label="Population" value={census ? nf.format(census.population) : '—'} note="census 2021" />
-        <Stat icon={<Home size={15} />} label="Households" value={census ? nf.format(census.households) : '—'} note={avgHousehold ? `${avgHousehold.toFixed(1)} people / home` : ''} />
-        <Stat icon={<Users size={15} />} label="Literacy" value={census?.literacy != null ? `${census.literacy.toFixed(1)}%` : '—'} note="age 5+" />
-        <Stat icon={<Mountain size={15} />} label="Area" value={area?.areaSqKm != null ? `${area.areaSqKm.toFixed(1)} km²` : '—'} note={KIND_LABEL[palika.kind]} />
+        <Stat icon={<Users size={15} />} label="Population" value={census ? nf.format(census.population) : 'N/A'} note="census 2021" />
+        <Stat icon={<Home size={15} />} label="Households" value={census ? nf.format(census.households) : 'N/A'} note={avgHousehold ? `${avgHousehold.toFixed(1)} people / home` : ''} />
+        <Stat icon={<Users size={15} />} label="Literacy" value={census?.literacy != null ? `${census.literacy.toFixed(1)}%` : 'N/A'} note="age 5+" />
+        <Stat icon={<Mountain size={15} />} label="Area" value={area?.areaSqKm != null ? `${area.areaSqKm.toFixed(1)} km²` : 'N/A'} note={KIND_LABEL[palika.kind]} />
       </section>
 
       <div className="place-two">
@@ -191,7 +191,7 @@ export default function PalikaPage() {
               <div className="place-wx-now">
                 <span className="wx-halo"><WeatherIcon kind={skyKind(condition)} size={62} /></span>
                 <div>
-                  <strong>{weather.temperature_2m != null ? `${Math.round(weather.temperature_2m)}°C` : '—'}</strong>
+                  <strong>{weather.temperature_2m != null ? `${Math.round(weather.temperature_2m)}°C` : 'N/A'}</strong>
                   <span>{condition}</span>
                   <small>
                     {weather.relative_humidity_2m != null ? `${Math.round(weather.relative_humidity_2m)}% humidity` : ''}
@@ -206,8 +206,8 @@ export default function PalikaPage() {
                     <div key={d.date} className="forecast-day">
                       <span>{i === 0 ? 'Today' : new Date(d.date).toLocaleDateString('en-GB', { weekday: 'short' })}</span>
                       <WeatherIcon kind={skyKind(wmoText(d.code))} size={26} />
-                      <b>{d.max != null ? `${Math.round(d.max)}°` : '—'}</b>
-                      <small>{d.min != null ? `${Math.round(d.min)}°` : '—'}</small>
+                      <b>{d.max != null ? `${Math.round(d.max)}°` : 'N/A'}</b>
+                      <small>{d.min != null ? `${Math.round(d.min)}°` : 'N/A'}</small>
                       {d.rainChance != null && <small>{d.rainChance}% rain</small>}
                     </div>
                   ))}

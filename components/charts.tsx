@@ -34,7 +34,7 @@ const defaultFormat = (v: number): string => {
 }
 
 /** Dark pill tooltip — recharts positions it natively (flips at edges, no viewport math). */
-function ChartTip({ active, payload, label, format, base, baseLabel, showDelta }: {
+function ChartTip({ active, payload, label, format, base, baseLabel, showDelta, forecastBaseline, showForecastChange }: {
   active?: boolean
   payload?: { value?: number | string | null; dataKey?: string | number }[]
   label?: string
@@ -42,6 +42,8 @@ function ChartTip({ active, payload, label, format, base, baseLabel, showDelta }
   base?: number | null
   baseLabel?: string
   showDelta?: boolean
+  forecastBaseline?: { year: string; value: number }
+  showForecastChange?: boolean
 }) {
   if (!active || !payload?.length) return null
   const point = payload.find(p => p.value != null && p.value !== '')
@@ -53,6 +55,9 @@ function ChartTip({ active, payload, label, format, base, baseLabel, showDelta }
     const pct = ((v - base) / Math.abs(base)) * 100
     delta = `${pct >= 0 ? '+' : ''}${pct.toFixed(1)}% vs ${baseLabel ?? 'start'}`
   }
+  const forecastDelta = showForecastChange && isForecast && forecastBaseline?.value
+    ? ((v - forecastBaseline.value) / Math.abs(forecastBaseline.value)) * 100
+    : null
   return (
     <div style={{
       background: 'var(--text)',
@@ -69,6 +74,11 @@ function ChartTip({ active, payload, label, format, base, baseLabel, showDelta }
         {isForecast && <span style={{ marginLeft: '.35rem', opacity: .65, fontWeight: 500 }}>· forecast</span>}
       </div>
       {delta && <div style={{ marginTop: '.15rem', fontWeight: 500, opacity: .7 }}>{delta}</div>}
+      {forecastDelta != null && forecastBaseline && (
+        <div style={{ marginTop: '.15rem', fontWeight: 500, opacity: .78 }}>
+          {forecastDelta >= 0 ? '+' : ''}{forecastDelta.toFixed(1)}% vs {forecastBaseline.year} actual ({format(forecastBaseline.value)})
+        </div>
+      )}
     </div>
   )
 }
@@ -191,7 +201,7 @@ export function BarChart({
 
 /* ─── LINE / AREA CHART ─── */
 export function LineChart({
-  data, color = 'var(--primary)', height = 120, formatValue, title, showArea = true, showDelta = false, yAxis = false, forecastFrom, xTicks, onHover, showForecastDots = false,
+  data, color = 'var(--primary)', height = 120, formatValue, title, showArea = true, showDelta = false, yAxis = false, forecastFrom, xTicks, onHover, showForecastDots = false, tickColor, showForecastChange = false,
   highlightLastColor,
 }: {
   data: DataPoint[]
@@ -209,14 +219,20 @@ export function LineChart({
   onHover?: (value: number | null) => void
   /** Show dots on forecast values, for charts where individual projections matter. */
   showForecastDots?: boolean
+  /** Axis label color override for charts on colored surfaces. */
+  tickColor?: string
+  /** Show forecast change against the latest actual in the tooltip. */
+  showForecastChange?: boolean
   /** Draw a distinct reference dot on the final point (for source-comparison points). */
   highlightLastColor?: string
 }) {
   const { resolved, grid, tick } = useResolved(color)
+  const axisTick = tickColor ?? tick
   const format = formatValue || defaultFormat
   const first = firstPoint(data)
   if (data.length < 2) return null
   const rows = toRows(data, forecastFrom)
+  const forecastBaseline = forecastFrom == null ? undefined : [...data].reverse().find(d => Number(d.year) < forecastFrom && d.value != null)
   const gradId = `lg-${data[0]?.year}-${data[data.length - 1]?.year}-${height}-${color.replace(/[^a-z0-9]/gi, '').slice(0, 5)}`
 
   const axes = (
@@ -224,7 +240,7 @@ export function LineChart({
       <CartesianGrid vertical={false} stroke={grid} strokeDasharray="3,3" />
       <XAxis
         dataKey="name"
-        tick={{ fill: tick, fontSize: 7.5 }}
+        tick={{ fill: axisTick, fontSize: 7.5 }}
         tickLine={false}
         axisLine={false}
         interval={xTicks ? 0 : rows.length <= 12 ? 0 : tickInterval(rows.length)}
@@ -242,7 +258,7 @@ export function LineChart({
           tickFormatter={format}
         />
       )}
-      <Tooltip content={<ChartTip format={format} showDelta={showDelta} base={first?.value} baseLabel={first?.year} />} cursor={{ stroke: grid, strokeDasharray: '3,3' }} />
+      <Tooltip content={<ChartTip format={format} showDelta={showDelta} base={first?.value} baseLabel={first?.year} forecastBaseline={forecastBaseline ? { year: forecastBaseline.year, value: forecastBaseline.value as number } : undefined} showForecastChange={showForecastChange} />} cursor={{ stroke: grid, strokeDasharray: '3,3' }} />
     </>
   )
 

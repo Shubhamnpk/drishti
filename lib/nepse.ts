@@ -23,11 +23,13 @@ const COMMON_HEADERS = {
   'Accept': 'application/json',
 }
 
-async function fetchJson<T>(url: string): Promise<T | null> {
+const MARKET_REVALIDATE_SECONDS = 300
+
+async function fetchJson<T>(url: string, revalidate = 3600): Promise<T | null> {
   try {
     const res = await fetch(url, {
       headers: COMMON_HEADERS,
-      next: { revalidate: 3600 },
+      next: { revalidate },
     })
     if (!res.ok) return null
     return res.json()
@@ -51,7 +53,7 @@ let floorSheetCache: Promise<{
 } | null> | null = null
 
 export async function fetchNepseStocks(): Promise<NepseStock[]> {
-  const raw = await fetchJson<Record<string, unknown>[]>(`${BASE_URL}/nepse_data.json`)
+  const raw = await fetchJson<Record<string, unknown>[]>(`${BASE_URL}/nepse_data.json`, MARKET_REVALIDATE_SECONDS)
   if (!raw) return []
   return raw.map((r: Record<string, unknown>) => {
     const ltp = Number(r.ltp ?? 0)
@@ -79,7 +81,7 @@ export async function fetchNepseStocks(): Promise<NepseStock[]> {
 
 export async function fetchNepseMarketSummary(): Promise<NepseMarketSummary | null> {
   // Shape: [{detail: "Total Turnover Rs:", value: n}, ...] - NOT a keyed object.
-  const rows = await fetchJson<{ detail: string; value: number }[]>(`${BASE_URL}/market/summary.json`)
+  const rows = await fetchJson<{ detail: string; value: number }[]>(`${BASE_URL}/market/summary.json`, MARKET_REVALIDATE_SECONDS)
   if (!rows) return null
   const get = (key: string): number => {
     const hit = rows.find(r => r.detail.toLowerCase().includes(key))
@@ -98,20 +100,19 @@ export async function fetchNepseMarketSummary(): Promise<NepseMarketSummary | nu
 
 /** Index series (NEPSE Index, Sensitive, Float…) with close/change/52W. 404-safe. */
 export async function fetchNepseIndices(): Promise<NepseIndex[]> {
-  const rows = await fetchJson<Record<string, unknown>[]>(`${BASE_URL}/market/indices.json`)
+  const rows = await fetchJson<Record<string, unknown>[]>(`${BASE_URL}/market/indices.json`, MARKET_REVALIDATE_SECONDS)
   if (!rows) return []
   return rows
     .filter(r => r.index)
     .map(r => {
-      // This feed's field names are inverted: `close` holds the *previous*
-      // session's level and `currentValue` holds today's level (its own
-      // `change`/`perChange` always equal `currentValue - close`). Reading
-      // `close` as today flips the sign of every move, e.g. a +31.54 day
-      // showed as -31.55.
+      // The mirror exposes both `previousClose` and today's level. In some
+      // snapshots `close` is also today's closing level; older snapshots
+      // used it for the previous close, so keep it as a compatibility
+      // fallback only.
       const feedChange = Number(r.change ?? 0)
       const feedPct = Number(r.perChange ?? 0)
-      const previousClose = Number(r.close ?? 0)
-      const current = Number(r.currentValue ?? 0) || (previousClose > 0 ? previousClose + feedChange : 0)
+      const previousClose = Number(r.previousClose ?? r.close ?? 0)
+      const current = Number(r.currentValue ?? r.close ?? 0) || (previousClose > 0 ? previousClose + feedChange : 0)
       const change = previousClose > 0 && current > 0 ? current - previousClose : feedChange
       return {
         name: String(r.index ?? ''),
@@ -171,7 +172,7 @@ export type NepseMarketDay = {
 
 /** Daily turnover/volume/transactions, oldest first (mirror keeps ~234 sessions). */
 export async function fetchNepseMarketHistory(days = 40): Promise<NepseMarketDay[]> {
-  const rows = await fetchJson<Record<string, unknown>[]>(`${BASE_URL}/market/history.json`)
+  const rows = await fetchJson<Record<string, unknown>[]>(`${BASE_URL}/market/history.json`, MARKET_REVALIDATE_SECONDS)
   if (!rows) return []
   return rows.slice(0, days).map(r => ({
     date: String(r.businessDate ?? ''),
@@ -215,7 +216,7 @@ export type NepseMarketStatus = {
 
 /** Trading-day open/closed flag (same mirror, static JSON, keyless). */
 export async function fetchNepseMarketStatus(): Promise<NepseMarketStatus | null> {
-  return fetchJson<NepseMarketStatus>(`${BASE_URL}/market/status.json`)
+  return fetchJson<NepseMarketStatus>(`${BASE_URL}/market/status.json`, MARKET_REVALIDATE_SECONDS)
 }
 
 export type NepseUpcomingIpo = {
@@ -561,7 +562,7 @@ export async function fetchNepseFloorSheetSummary(symbol: string): Promise<Nepse
 export async function fetchNepseTopStocks(): Promise<{ topGainers: NepseStock[]; topLosers: NepseStock[] } | null> {
   // Shape: {top_gainer: [...], top_loser: [...], top_turnover, top_trade, top_transaction}
   // rows: {symbol, ltp, cp, pointChange, percentageChange, securityName}
-  const raw = await fetchJson<Record<string, Record<string, unknown>[]>>(`${BASE_URL}/market/top_stocks.json`)
+  const raw = await fetchJson<Record<string, Record<string, unknown>[]>>(`${BASE_URL}/market/top_stocks.json`, MARKET_REVALIDATE_SECONDS)
   if (!raw) return null
   const mapRow = (r: Record<string, unknown>): NepseStock => ({
     symbol: String(r.symbol ?? ''),

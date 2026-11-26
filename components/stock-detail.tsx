@@ -178,7 +178,7 @@ function reportPeriod(report: NepseReport): string {
 }
 
 function pctText(value: number | null | undefined): string {
-  return value == null ? '—' : `${value.toFixed(2)}%`
+  return value == null ? 'N/A' : `${value.toFixed(2)}%`
 }
 
 function PositionBar({ label, low, high, value, tone }: {
@@ -336,7 +336,7 @@ export function StockDetail({ stock, sector, history, peers, profile, rank, fina
           </div>
           <p style={{ margin: '.16rem 0 0', color: 'var(--text-secondary)', fontSize: '.8rem' }}>{stock.companyName}</p>
           <p className="muted" style={{ marginTop: '.32rem' }}>
-            Latest session {asOf ? fmtDate(asOf) : '—'} &middot; previous close {formatNpr(previousClose)}
+            Latest session {asOf ? fmtDate(asOf) : 'N/A'} &middot; previous close {formatNpr(previousClose)}
           </p>
 
           <div className="stock-day-grid">
@@ -362,7 +362,7 @@ export function StockDetail({ stock, sector, history, peers, profile, rank, fina
             {signed(dayChange)} ({signed(dayPct)}%)
           </span>
           <small>
-            1Y return <b className={yearPct != null && yearPct >= 0 ? 'positive' : yearPct != null ? 'negative' : undefined}>{yearPct == null ? '—' : `${signed(yearPct)}%`}</b>
+            1Y return <b className={yearPct != null && yearPct >= 0 ? 'positive' : yearPct != null ? 'negative' : undefined}>{yearPct == null ? 'N/A' : `${signed(yearPct)}%`}</b>
           </small>
         </div>
       </div>
@@ -439,12 +439,12 @@ export function StockDetail({ stock, sector, history, peers, profile, rank, fina
           </div>
           <div className="stock-snapshot">
             {[
-              { icon: <Activity size={13} />, label: 'Volume', value: volume ? `${formatNum(volume)} shares` : '—' },
-              { icon: <Landmark size={13} />, label: 'Turnover', value: turnover ? formatNpr(turnover) : '—' },
-              { icon: <BarChart3 size={13} />, label: 'Trades', value: trades ? formatNum(trades) : '—' },
-              { icon: <Layers size={13} />, label: 'Market cap', value: marketCap ? formatNpr(marketCap) : '—' },
+              { icon: <Activity size={13} />, label: 'Volume', value: volume ? `${formatNum(volume)} shares` : 'N/A' },
+              { icon: <Landmark size={13} />, label: 'Turnover', value: turnover ? formatNpr(turnover) : 'N/A' },
+              { icon: <BarChart3 size={13} />, label: 'Trades', value: trades ? formatNum(trades) : 'N/A' },
+              { icon: <Layers size={13} />, label: 'Market cap', value: marketCap ? formatNpr(marketCap) : 'N/A' },
               { icon: <Building2 size={13} />, label: 'Sector', value: sectorLabel(sector) },
-              { icon: <TrendingUp size={13} />, label: 'Turnover rank', value: rank ? `#${rank.byTurnover} of ${rank.of}` : '—' },
+              { icon: <TrendingUp size={13} />, label: 'Turnover rank', value: rank ? `#${rank.byTurnover} of ${rank.of}` : 'N/A' },
             ].map(row => (
               <div key={row.label} className="stock-snapshot-row">
                 <span>{row.icon}{row.label}</span>
@@ -492,7 +492,7 @@ export function StockDetail({ stock, sector, history, peers, profile, rank, fina
                       style={{ width: `${Math.max(value == null ? 0 : 3, width)}%`, background: value != null && value < 0 ? 'var(--danger)' : 'var(--accent)' }}
                     />
                   </span>
-                  <strong className={value == null ? undefined : value >= 0 ? 'positive' : 'negative'}>{value == null ? '—' : `${signed(value)}%`}</strong>
+                  <strong className={value == null ? undefined : value >= 0 ? 'positive' : 'negative'}>{value == null ? 'N/A' : `${signed(value)}%`}</strong>
                 </div>
               )
             })}
@@ -570,10 +570,10 @@ export function StockDetail({ stock, sector, history, peers, profile, rank, fina
                   </span>
                 </div>
                 <div className="stock-fin-stats">
-                  <div><span>Latest EPS</span><strong>{latestReport.eps == null ? '—' : formatNpr(latestReport.eps)}</strong></div>
-                  <div><span>P/E ratio</span><strong>{latestReport.pe == null ? '—' : latestReport.pe.toFixed(2)}</strong></div>
-                  <div><span>Net worth / share</span><strong>{latestReport.net_worth_per_share == null ? '—' : formatNpr(latestReport.net_worth_per_share)}</strong></div>
-                  <div><span>Profit</span><strong>{latestReport.profit == null ? '—' : formatNpr(latestReport.profit)}</strong></div>
+                  <div><span>Latest EPS</span><strong>{latestReport.eps == null ? 'N/A' : formatNpr(latestReport.eps)}</strong></div>
+                  <div><span>P/E ratio</span><strong>{latestReport.pe == null ? 'N/A' : latestReport.pe.toFixed(2)}</strong></div>
+                  <div><span>Net worth / share</span><strong>{latestReport.net_worth_per_share == null ? 'N/A' : formatNpr(latestReport.net_worth_per_share)}</strong></div>
+                  <div><span>Profit</span><strong>{latestReport.profit == null ? 'N/A' : formatNpr(latestReport.profit)}</strong></div>
                 </div>
                 <div className="stock-fy-groups">
                   {fyGroups.map(group => {
@@ -597,11 +597,11 @@ export function StockDetail({ stock, sector, history, peers, profile, rank, fina
                           <strong>FY {formatFiscalYearLabel(group.fy, group.fyNepali)}</strong>
                           <span>
                             <small>Net result</small>
-                            <b className={group.total == null ? undefined : group.total >= 0 ? 'positive' : 'negative'}>{group.total == null ? '—' : formatNpr(group.total)}</b>
+                            <b className={group.total == null ? undefined : group.total >= 0 ? 'positive' : 'negative'}>{group.total == null ? 'N/A' : formatNpr(group.total)}</b>
                           </span>
                           <span>
                             <small>YoY</small>
-                            <b className={group.yoy == null ? undefined : group.yoy >= 0 ? 'positive' : 'negative'}>{group.yoy == null ? '—' : `${signed(group.yoy)}%`}</b>
+                            <b className={group.yoy == null ? undefined : group.yoy >= 0 ? 'positive' : 'negative'}>{group.yoy == null ? 'N/A' : `${signed(group.yoy)}%`}</b>
                           </span>
                           <small className="stock-fy-basis">{group.totalBasis === 'annual' ? 'Annual report' : group.totalBasis === 'quarters' ? 'Quarter total' : 'No profit data'} · {group.quarters.length} quarter filings</small>
                         </summary>
@@ -614,10 +614,10 @@ export function StockDetail({ stock, sector, history, peers, profile, rank, fina
                               {rows.map((report, index) => (
                                 <tr key={`${group.fy}-${report.quarter}-${report.type}-${index}`}>
                                   <td>{report.type === 'Annual Report' ? `Annual ${report.fy}` : reportPeriod(report)}</td>
-                                  <td>{report.eps == null ? '—' : formatNpr(report.eps)}</td>
-                                  <td>{report.pe == null ? '—' : report.pe.toFixed(2)}</td>
-                                  <td className={report.profit != null && report.profit < 0 ? 'negative' : undefined}>{report.profit == null ? '—' : formatNpr(report.profit)}</td>
-                                  <td>{report.net_worth_per_share == null ? '—' : formatNpr(report.net_worth_per_share)}</td>
+                                  <td>{report.eps == null ? 'N/A' : formatNpr(report.eps)}</td>
+                                  <td>{report.pe == null ? 'N/A' : report.pe.toFixed(2)}</td>
+                                  <td className={report.profit != null && report.profit < 0 ? 'negative' : undefined}>{report.profit == null ? 'N/A' : formatNpr(report.profit)}</td>
+                                  <td>{report.net_worth_per_share == null ? 'N/A' : formatNpr(report.net_worth_per_share)}</td>
                                 </tr>
                               ))}
                             </tbody>
@@ -638,7 +638,7 @@ export function StockDetail({ stock, sector, history, peers, profile, rank, fina
               <>
                 {latestDividend && (
                   <div className="stock-fin-stats" style={{ gridTemplateColumns: '1fr 1fr 1fr' }}>
-                    <div><span>Fiscal year</span><strong>{latestDividend.fiscalYear || '—'}</strong></div>
+                    <div><span>Fiscal year</span><strong>{latestDividend.fiscalYear || 'N/A'}</strong></div>
                     <div><span>Bonus</span><strong>{pctText(latestDividend.bonus)}</strong></div>
                     <div><span>Total</span><strong>{pctText(latestDividend.total)}</strong></div>
                   </div>
@@ -651,7 +651,7 @@ export function StockDetail({ stock, sector, history, peers, profile, rank, fina
                     <tbody>
                       {dividends.map((row, index) => (
                         <tr key={`${row.fiscalYear}-${row.announce}-${index}`}>
-                          <td>{row.fiscalYear || '—'}</td>
+                          <td>{row.fiscalYear || 'N/A'}</td>
                           <td>{pctText(row.bonus)}</td>
                           <td>{pctText(row.cash)}</td>
                           <td><strong>{pctText(row.total)}</strong></td>

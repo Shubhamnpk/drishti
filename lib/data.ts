@@ -7,6 +7,10 @@ export function slugify(name: string): string {
     .replace(/^-+|-+$/g, '')
 }
 
+export function projectProgressLabel(project: Pick<Project, 'progress'>): string {
+  return project.progress == null ? 'Not reported' : `${project.progress}%`
+}
+
 export function companySlug(c: Company): string {
   return slugify(c.name)
 }
@@ -1490,16 +1494,16 @@ export const projects: Project[] = [
     "province": "National",
     "budget": "211.93B (revised DPR)",
     "budgetNote": "The revised Detailed Project Report cost, quoting the Army/progress reporting; planning-stage estimates were far lower - about रु 116B when the Army took over and about रु 85B in early DPR drafts.",
-    "progress": 50.02,
+    "progress": 50.54,
     "status": "Delayed",
     "category": "Highway",
     "description": "Nepal’s first expressway - 70.977 km high-speed corridor shaving Kathmandu-Terai travel to about 1 hour. Managed by the Nepali Army since 2017, built in 13 packages, 12 of which are under contract; the Khokana starting-point (package 11) is still unstarted over land and heritage disputes.",
-    "updated": "13 Oct 2026",
+    "updated": "18 Nov 2026",
     "spent": "94.22B",
     "spentNote": "Cumulative expenditure to end-Ason 2083 (Sept 2026) as reported by the Nepali Army; रु 92.68B was the FY-end NPC figure. Reported financial progress of 51.47% includes mobilization advances and is measured against award values, so it does not equal 94.22/211.93 (44%) - the two figures use different bases.",
     "target": "Chaitra end 2086 / Apr 2030 (3rd extension)",
-    "source": "Nepali Army, reported by Kathmandu Post / Ratopati",
-    "sourceUrl": "https://kathmandupost.com/national/2026/09/23/expressway-deadline-extended-for-third-time-as-project-nears-a-decade-with-half-the-work-unfinished",
+    "source": "Nepali Army project chief, reported by Khabarhub",
+    "sourceUrl": "https://english.khabarhub.com/2026/18/576065/",
     "image": "https://assets-cdn.kathmandupost.com/uploads/source/news/2026/news/main-1769777905.jpg",
     "management": {
       "agency": "Nepali Army - fast-track directorate",
@@ -1654,6 +1658,12 @@ export const projects: Project[] = [
     ],
     "updates": [
       {
+        "date": "18 Nov 2026",
+        "title": "Mahadevtar right bore breaks through; progress reaches 50.54%",
+        "type": "Milestone",
+        "text": "The 3,454 m Mahadevtar tunnel excavation broke through, completing both parallel bores. The Army says 6 of 14 tunnel bores are excavated; 8 remain underway. Khokana-Dukuchhap land acquisition and the uncontracted 6.5 km section remain unresolved."
+      },
+      {
         "date": "26 Jul 2026",
         "title": "49% physical - 12 of 13 packages started",
         "type": "Update",
@@ -1689,7 +1699,7 @@ export const projects: Project[] = [
     "status": "At risk",
     "category": "Hydropower",
     "description": "263 m-high storage dam - the country’s largest reservoir - to generate 3.38 TWh/yr and tame floods near Kathmandu’s load centre.",
-    "updated": "FY 2082/83",
+    "updated": "25 Nov 2026",
     "spent": "42.8B",
     "target": "FY 2092/93 (NPC estimate)",
     "source": "National Planning Commission - National Pride progress, FY 2082/83",
@@ -1745,6 +1755,12 @@ export const projects: Project[] = [
     ],
     "updates": [
       {
+        "date": "25 Nov 2026",
+        "title": "Camp office and bridge construction formally launched",
+        "type": "Milestone",
+        "text": "Foundations were laid for the project company office, staff housing and a concrete bridge at Siurenitar. The CEO said these are enabling works for staffing the site; main dam and powerhouse construction is still targeted for January 2028."
+      },
+      {
         "date": "05 Jun 2026",
         "title": "Financing modality approved - 30/70",
         "type": "Milestone",
@@ -1767,6 +1783,17 @@ export const projects: Project[] = [
         "title": "Alert - funding gap flagged by OAG",
         "type": "Alert",
         "text": "62nd OAG report flagged unsecured debt financing as key risk to 2028 main works start."
+      }
+    ],
+    "changeLog": [
+      {
+        "date": "25 Nov 2026",
+        "field": "Enabling works / main construction schedule",
+        "from": "Camp and access works under way; main works targeted for January 2028",
+        "to": "Foundations laid for company office, staff housing and concrete bridge at Siurenitar; main dam and powerhouse works remain targeted for January 2028",
+        "source": "Budhigandaki Hydropower Company CEO, reported by Radio Nepal",
+        "sourceUrl": "https://radionepalonline.com/en/2026/11/25/439275.html",
+        "note": "This is a construction-enabling milestone, not the start of the dam or powerhouse. The 16.55% figure remains the NPC cumulative project progress through FY 2082/83."
       }
     ]
   },
@@ -1852,13 +1879,30 @@ export const projects: Project[] = [
     "status": "At risk",
     "category": "Highway",
     "description": "1,875 km Terai artery with 35 feeder roads to the Indian border, serving 8 million people across 21 Madhesh districts.",
-    "updated": "3 Aug 2026",
+    "updated": "13 Nov 2026",
     "spent": "73.38B",
     "target": "FY 2086/87 (NPC estimate)",
     "source": "National Planning Commission - National Pride progress, FY 2082/83",
     "sourceUrl": "https://npc.gov.np/content/6836/overall-progress-statement-of-the-project-of/",
     "image": "https://www.eaarthik.com/wp-content/uploads/2020/11/Hulaki-Rajmarg.jpg",
+    "updates": [
+      {
+        "date": "13 Nov 2026",
+        "title": "Kamala River bridge reaches final works after 15 years",
+        "type": "Milestone",
+        "text": "Bridge and repair works are reported complete; expansion joints, approach roads, embankments and railings remained. The ministry's latest public target is to open it by December 2026; no opening confirmation found by 26 Nov."
+      }
+    ],
     "changeLog": [
+      {
+        "date": "13 Nov 2026",
+        "field": "Kamala bridge status (Siraha-Dhanusha section)",
+        "from": "Long-delayed bridge still not in service",
+        "to": "Bridge work at final stage; opening targeted by December 2026",
+        "source": "Postal Highway Directorate, reported by Onlinekhabar",
+        "sourceUrl": "https://english.onlinekhabar.com/kamala-river-bridge-almost-done.html",
+        "note": "This is a section-level milestone. It does not change the Postal Highway's 75.41% national cumulative progress figure."
+      },
       {
         "date": "3 Aug 2026",
         "field": "Section status (Kanchanpur tail)",
@@ -2315,7 +2359,7 @@ export const projects: Project[] = [
     "status": "Delayed",
     "category": "Hydropower",
     "description": "An 800 MW reservoir project under study by Investment Board Nepal, alongside the 450 MW Seti River-6 project. IBN says the survey-license period was extended in November 2025; construction has not started.",
-    "updated": "Feb 2026 (IBN)",
+    "updated": "5 Nov 2026",
     "spent": "340M",
     "spentNote": "IBN reported investment realized through December 2023 for West Seti and SR-6 combined; not a West Seti-only total.",
     "target": "Survey phase; no construction completion date reported",
@@ -2323,6 +2367,15 @@ export const projects: Project[] = [
     "sourceUrl": "https://giwmscdntwo.gov.np/media/pdf_upload/IBN%20Dispatch%20February%202026%20%2823%29-Final-%202082-9-27_i6xphmr.pdf",
     "image": "https://www.world-energy.org/uploadfile/2023/1211/20231211021644280.jpg",
     "changeLog": [
+      {
+        "date": "5 Nov 2026",
+        "field": "Development status / environmental review",
+        "from": "No construction; NHPC survey and approvals ongoing",
+        "to": "NHPC reported its EIA filed with IBN on 7 Sep 2026; as of 5 Nov, IBN had made no further decision on the project since forming a PDA negotiation committee in Sep 2025",
+        "source": "NHPC status presentation; Investment Board status reported by Kathmandu Post",
+        "sourceUrl": "https://kathmandupost.com/money/2026/11/05/india-secures-4-700mw-in-nepal-but-little-progress-on-projects",
+        "note": "NHPC's company presentation records the EIA submission and remaining clearances; construction has not started. Its November presentation: https://www.nhpcindia.com/assests/pzi_public/gallery/17938026250hi.pdf"
+      },
       {
         "date": "19 Aug 2026",
         "field": "Development status",
@@ -3011,16 +3064,16 @@ export const projects: Project[] = [
     "province": "Lumbini",
     "budget": "7.34B",
     "budgetNote": "Reported EPC contract amount.",
-    "progress": 69.57,
+    "progress": 70.26,
     "status": "At risk",
     "category": "Highway",
     "description": "1,126 m Himalayan bypass on Siddhartha Highway - EPC by China State Construction (CSCEC) to end landslide closures at Siddhababa.",
-    "updated": "23 Sep 2026",
+    "updated": "4 Nov 2026",
     "spent": "3B",
     "spentNote": "Approximate amount reported by the Project Office through the January 2025 tunnel breakthrough; newer reports do not publish a cumulative NPR total.",
     "target": "Apr 2027 (contract)",
     "source": "Siddhababa Tunnel Project Office, reported by Kathmandu Post",
-    "sourceUrl": "https://kathmandupost.com/province-no-5/2026/09/23/flood-destroys-equipment-pushing-back-siddhababa-tunnel-opening",
+    "sourceUrl": "https://kathmandupost.com/national/2026/11/04/floods-push-back-siddhababa-tunnel-opening-to-mid-january",
     "image": "https://upload.wikimedia.org/wikipedia/commons/e/eb/Siddha_baba_Temple.jpg",
     "gallery": [
       "https://upload.wikimedia.org/wikipedia/commons/e/eb/Siddha_baba_Temple.jpg",
@@ -3040,6 +3093,15 @@ export const projects: Project[] = [
       }
     ],
     "changeLog": [
+      {
+        "date": "4 Nov 2026",
+        "field": "Physical progress / traffic opening",
+        "from": "69.57% physical; traffic opening targeted for mid-Dec 2026",
+        "to": "70.26% physical; opening pushed to mid-Jan 2027 after flood-related equipment delays",
+        "source": "Siddhababa Tunnel Project Office, reported by Kathmandu Post",
+        "sourceUrl": "https://kathmandupost.com/national/2026/11/04/floods-push-back-siddhababa-tunnel-opening-to-mid-january",
+        "note": "The project office reported 63.55% financial progress. Replacement electromechanical equipment was delayed in transit after the August floods."
+      },
       {
         "date": "Jan 2025",
         "field": "Cumulative construction expenditure (approximate)",
@@ -3247,7 +3309,7 @@ export const projects: Project[] = [
     "status": "Delayed",
     "category": "Irrigation",
     "description": "42,700 ha command in Banke, Western Terai - canal breached by dispersive soil in 2016, now half-built after 21 years.",
-    "updated": "19 Aug 2026",
+    "updated": "5 Nov 2026",
     "spent": "24.33B",
     "target": "FY 2089/90 (NPC estimate)",
     "source": "Ministry of Energy action plan, reported by The Rising Nepal / Republica",
@@ -3262,6 +3324,37 @@ export const projects: Project[] = [
         "source": "Ministry of Energy action plan, reported by Republica; earlier detail by The Rising Nepal",
         "sourceUrl": "https://risingnepaldaily.com/news/79037",
         "note": "The ministry's August 2026 plan puts Sikta at 51% physical / 44% financial with about 25,000 of 42,700 ha commanded and orders completion within five years (the project-level revised master plan had already set FY 2032/33). Dispersive remains the main technical problem, to be resolved through a dedicated study. FY budget pressure is chronic: of the रु 3.3B budgeted for FY 2025/26 only रु 1.57B arrived, and रु 857.79M was spent by mid-April per the project office (total spend ~रु 23.8-24.3B across sources)."
+      },
+      {
+        "date": "5 Nov 2026",
+        "field": "FY 2026/27 Q1 physical target",
+        "from": "No Q1 result recorded",
+        "to": "80.2% of quarterly physical target achieved",
+        "source": "Department of Water Resources and Irrigation, reported by Nepal News",
+        "sourceUrl": "https://english.nepalnews.com/s/nation/irrigation-projects-spend-rs-2-39-billion-in-first-quarter-achieve-strong-physical-progress/",
+        "note": "Quarterly target attainment is not the project's cumulative physical progress; the tracked cumulative figure remains 51% from the ministry action plan."
+      },
+      {
+        "date": "1 Nov 2026",
+        "field": "Irrigation coverage / tender activity",
+        "from": "About 25,000 of 42,700 ha irrigated (Aug 2026 ministry plan)",
+        "to": "A further 100 ha reported served; four contracts worth NPR 540.3M tendered, with a 300-ha near-term target",
+        "source": "Department of Water Resources and Irrigation, reported by Urja Khabar",
+        "sourceUrl": "https://urjakhabar.com/en/news/0111543538"
+      }
+    ],
+    "updates": [
+      {
+        "date": "5 Nov 2026",
+        "title": "Reached 80.2% of first-quarter physical target",
+        "type": "Update",
+        "text": "The Department of Water Resources and Irrigation reported Sikta delivered 80.2% of its physical target for FY 2026/27 Q1. This is quarterly target attainment, not cumulative project completion."
+      },
+      {
+        "date": "1 Nov 2026",
+        "title": "Irrigation extended to another 100 hectares",
+        "type": "Milestone",
+        "text": "The department reports 100 additional hectares served. Four contracts worth NPR 540.3 million were tendered; the project targets 300 more hectares by mid-January 2027."
       }
     ],
     "checklist": [
@@ -3315,11 +3408,11 @@ export const projects: Project[] = [
     "location": "Surkhet-Bardiya (Bheri → Babai tunnel)",
     "province": "Karnali",
     "budget": "33.2B",
-    "progress": 67,
+    "progress": 70,
     "status": "At risk",
     "category": "Irrigation",
     "description": "12 km tunnel feeding Bheri water into Babai to irrigate Banke/Bardiya and generate 48 MW - ordered finished within 2 years.",
-    "updated": "09 Oct 2026",
+    "updated": "1 Nov 2026",
     "spent": "19.3B",
     "target": "FY 2087/88 (NPC estimate)",
     "source": "Bheri-Babai Diversion project office, reported by Kantipur / Ministry of Energy action plan",
@@ -3338,6 +3431,23 @@ export const projects: Project[] = [
         "source": "Bheri-Babai project information officer Hari Bahadur Thapa, reported by Kantipur",
         "sourceUrl": "https://ekantipur.com/karnali-pradesh/2026/10/09/only-70-percent-of-the-work-on-the-bheri-babai-diversion-is-complete-with-the-goal-of-completing-it-in-three-years-44-49.html",
         "note": "The 12 km main tunnel was finished ahead of schedule years ago, but the civil package (dam site and powerhouse structures, रु 6.88B contract) is only 48% done against a contract that expired in Saun 2080, hydromechanical 60% and electromechanical 55%, with turbine and generator equipment manufactured but not installed. COVID, material shortages and a blacklisted consultant dragged works; the revised work plan allows two to three more years. The Energy Ministry's August 2026 action plan directs completion within two to three dry seasons (about रु 33.2B revised total, रु 19.3B spent)."
+      },
+      {
+        "date": "1 Nov 2026",
+        "field": "Current-year irrigation works / reported progress basis",
+        "from": "70% cumulative physical progress (project office, Oct 2026)",
+        "to": "Four tenders worth NPR 610M planned by end-Poush; separate 3.4% Bhadra-period figure has unclear scope",
+        "source": "Department of Water Resources and Irrigation, reported by Urja Khabar",
+        "sourceUrl": "https://urjakhabar.com/en/news/0111543538",
+        "note": "Do not replace the 70% overall project figure with 3.4%: the article does not explain how the Bhadra-period figure is scoped."
+      }
+    ],
+    "updates":     [
+      {
+        "date": "1 Nov 2026",
+        "title": "New tenders planned for irrigation works",
+        "type": "Update",
+        "text": "The irrigation department planned four tenders worth NPR 610 million by the end of Poush. A separate report gives 3.4% physical progress as of end-Bhadra but does not clarify its measurement basis; the project office's 70% cumulative figure remains the tracked headline."
       }
     ],
     "checklist": [
@@ -3395,7 +3505,7 @@ export const projects: Project[] = [
     "status": "On track",
     "category": "Irrigation",
     "description": "36,000 ha year-round irrigation in Bardiya - Nepal’s oldest pride project (since 1988), now 28,800 ha irrigated.",
-    "updated": "FY 2082/83",
+    "updated": "5 Nov 2026",
     "spent": "18.21B",
     "target": "FY 2085/86 (NPC estimate)",
     "source": "National Planning Commission - National Pride progress, FY 2082/83",
@@ -3410,6 +3520,23 @@ export const projects: Project[] = [
         "source": "Ministry of Energy, Water Resources & Irrigation action plan, reported by The Rising Nepal",
         "sourceUrl": "https://risingnepaldaily.com/news/85224",
         "note": "The August 2026 action plan confirms 81.97% physical / 68.23% financial with रु 18.21B spent of रु 26.69B and 28,800 of 36,000 ha irrigated, ordering completion within the next three dry seasons as part of a five-year plan for six pride irrigation projects. Separately, six contracts under the project were cancelled in January 2026 as sick contracts after years without progress."
+      },
+      {
+        "date": "5 Nov 2026",
+        "field": "FY 2026/27 Q1 progress / service extension",
+        "from": "No current-fiscal-year update recorded",
+        "to": "81.8% of quarterly physical target achieved; 50 additional hectares served",
+        "source": "Department of Water Resources and Irrigation, reported by Nepal News / Urja Khabar",
+        "sourceUrl": "https://english.nepalnews.com/s/nation/irrigation-projects-spend-rs-2-39-billion-in-first-quarter-achieve-strong-physical-progress/",
+        "note": "The quarterly percentage is not cumulative project completion. The cumulative 81.97% remains the NPC FY 2082/83 figure."
+      }
+    ],
+    "updates":     [
+      {
+        "date": "5 Nov 2026",
+        "title": "Reached 81.8% of first-quarter physical target",
+        "type": "Update",
+        "text": "The Department of Water Resources and Irrigation reported Babai delivered 81.8% of its physical target for FY 2026/27 Q1. Separately, the project added irrigation coverage to 50 hectares and targets 300 more hectares by mid-January 2027."
       }
     ],
     "checklist": [
@@ -3468,7 +3595,7 @@ export const projects: Project[] = [
     "status": "At risk",
     "category": "Irrigation",
     "description": "Modernisation of Nepal’s oldest farmer-built canal to feed 12,400 ha remaining in the far-west Terai.",
-    "updated": "19 Aug 2026",
+    "updated": "5 Nov 2026",
     "spent": "21.33B",
     "target": "FY 2087/88 (NPC estimate)",
     "source": "Ministry of Energy action plan, reported by Republica / Kathmandu Post",
@@ -3483,6 +3610,23 @@ export const projects: Project[] = [
         "source": "Rani Jamara Kulariya project office, reported by Kathmandu Post",
         "sourceUrl": "https://kathmandupost.com/money/2026/07/27/land-disputes-stall-final-phase-of-rs51-billion-rani-jamara-kulariya-irrigation-project",
         "note": "Phase 1 and 2 works are essentially done and the 4.71 MW plant is built (operating modality being finalised), extending reliable year-round irrigation to about 14,300 ha, but the Patharaiya-Kandra extension (17,500 ha more) has not begun because compensation talks in Ghodaghodi Municipality-2 failed. Cost has grown to about रु 51.33B with the expanded scope; the FY 2025/26 allocation was cut from रु 2.14B to रु 1.43B mid-year (51% spent). The ministry's August 2026 action plan reiterates a five-year window and pegs irrigation transfers at 38,300 ha target / 13,200 ha reached; a World Bank-supported canal expansion (~$137M, 18,000 ha more) is in preparation."
+      },
+      {
+        "date": "5 Nov 2026",
+        "field": "FY 2026/27 Q1 progress",
+        "from": "No current-fiscal-year update recorded",
+        "to": "71% of quarterly physical target achieved; six contracts worth NPR 1.33B tendered",
+        "source": "Department of Water Resources and Irrigation, reported by Nepal News",
+        "sourceUrl": "https://english.nepalnews.com/s/nation/irrigation-projects-spend-rs-2-39-billion-in-first-quarter-achieve-strong-physical-progress/",
+        "note": "Quarterly target attainment is not comparable with the 76% cumulative figure reported for the expanded whole project in July 2026."
+      }
+    ],
+    "updates":     [
+      {
+        "date": "5 Nov 2026",
+        "title": "Reached 71% of first-quarter physical target",
+        "type": "Update",
+        "text": "The department reported 71% of the project's FY 2026/27 Q1 physical target achieved. Six contracts worth about NPR 1.33 billion were tendered. These current-year measures are separate from the project's cumulative progress."
       }
     ],
     "checklist": [
@@ -3540,7 +3684,7 @@ export const projects: Project[] = [
     "status": "Delayed",
     "category": "Irrigation",
     "description": "13.3 km tunnel diverting 67 cumecs of Sunkoshi water to Marin to irrigate 122,000 ha in Bara-Rautahat - dam and powerhouse re-bidding after the contractor was terminated.",
-    "updated": "13 Oct 2026",
+    "updated": "1 Nov 2026",
     "spent": "16.81B",
     "target": "FY 2089/90 (NPC estimate)",
     "source": "Sunkoshi-Marin project office, reported by New Business Age",
@@ -3577,6 +3721,22 @@ export const projects: Project[] = [
         "source": "Sunkoshi-Marin Diversion project office, reported by New Business Age",
         "sourceUrl": "https://www.newbusinessage.com/news/50463/sinohydro--china-international-among-three-firms-qualifying-for-sunkoshi-marin-construction-contract/",
         "note": "The dam, powerhouse and hydromechanical contract was terminated in November 2025 after only ~10-11% physical progress at ~61% of the contract period; the contractor was blacklisted for three years (May 2026) and a Supreme Court ruling (Feb 2026) cleared the seizure of रु 3.6B in guarantees. The रु 10.05B, 13.3 km diversion tunnel itself was completed 19 months early and handed over in Saun 2082 but sits unused awaiting the dam. International bids reopened 8 June 2026 on a ~रु 18B revised estimate; Sinohydro, China International Water & Electric and Anneng RCC JV passed technical evaluation on 13 October 2026. The FY 2083/84 budget allocates रु 2.98B and targets completion within about four years of the new contract; NPC's 37.81% remains the overall progress figure."
+      },
+      {
+        "date": "1 Nov 2026",
+        "field": "Near-term irrigation / embankment targets",
+        "from": "No FY 2026/27 Q1 service targets recorded",
+        "to": "97 ha lift irrigation and 6.18 km embankments targeted by mid-Jan 2027",
+        "source": "Department of Water Resources and Irrigation, reported by Urja Khabar",
+        "sourceUrl": "https://urjakhabar.com/en/news/0111543538"
+      }
+    ],
+    "updates":     [
+      {
+        "date": "1 Nov 2026",
+        "title": "Near-term lift irrigation and embankment targets set",
+        "type": "Milestone",
+        "text": "The project set targets to provide lift irrigation to 97 hectares and build 6.18 km of embankments by mid-January 2027. These are service works; the dam contract re-tender and 37.81% cumulative progress remain the major project-level constraints."
       }
     ],
     "checklist": [
@@ -3634,7 +3794,7 @@ export const projects: Project[] = [
     "status": "Delayed",
     "category": "Irrigation",
     "description": "33,520 ha Kanchanpur scheme on the Mahakali - 19 years, only a quarter complete, farmers still rain-fed.",
-    "updated": "19 Aug 2026",
+    "updated": "5 Nov 2026",
     "spent": "10.74B",
     "target": "FY 2034/35 (Ministry action plan)",
     "source": "Ministry of Energy action plan, reported by Republica",
@@ -3649,6 +3809,23 @@ export const projects: Project[] = [
         "source": "Ministry of Energy action plan, reported by Republica",
         "sourceUrl": "https://myrepublica.nagariknetwork.com/index.php/news/national-pride-irrigation-projects-to-be-completed-within-five-years-81-68.html",
         "note": "The five-judge reset pushes this project further out than any other: रु 10.74B spent of an ~रु 37B revised estimate (NPC lists रु 35.03B), with command coverage stuck at 5,155 ha against 33,500 planned. Land acquisition and uncertainty over the water volume Nepal will receive from India under the Mahakali Treaty are the named blockers; the OAG's May 2026 report also flags that phase-3 canal works (Tribhuvan Basti side canals) have not begun."
+      },
+      {
+        "date": "5 Nov 2026",
+        "field": "FY 2026/27 Q1 physical target / expenditure",
+        "from": "No current-fiscal-year update recorded",
+        "to": "97.2% of quarterly physical target; NPR 437M spent in the quarter",
+        "source": "Department of Water Resources and Irrigation, reported by Nepal News",
+        "sourceUrl": "https://english.nepalnews.com/s/nation/irrigation-projects-spend-rs-2-39-billion-in-first-quarter-achieve-strong-physical-progress/",
+        "note": "Quarterly target attainment and quarterly spending are not cumulative completion or lifetime expenditure; headline cumulative progress remains 31%."
+      }
+    ],
+    "updates":     [
+      {
+        "date": "5 Nov 2026",
+        "title": "Reached 97.2% of first-quarter physical target",
+        "type": "Update",
+        "text": "The Department of Water Resources and Irrigation reported Mahakali reached 97.2% of its FY 2026/27 Q1 physical target and spent NPR 437 million. This quarterly result does not change the 31% cumulative progress reported in the ministry action plan."
       }
     ],
     "checklist": [
@@ -4074,6 +4251,59 @@ export const projects: Project[] = [
         "date": "Not reported",
         "note": "Not yet evidenced in indexed sources."
       }
+    ]
+  },
+  {
+    "name": "Lower Arun Hydropower (669 MW)",
+    "ministry": "Investment Board Nepal / SJVN Lower Arun Power Development Company",
+    "location": "Chichila Rural Municipality and Khandbari Municipality, Sankhuwasabha",
+    "province": "Koshi",
+    "budget": "92.68B (IBN investment approval, 2023)",
+    "budgetNote": "Investment approved by the Investment Board of Nepal; distinguish from cumulative government expenditure.",
+    "progress": null,
+    "status": "At risk",
+    "category": "Hydropower",
+    "description": "National-level Investment Board Nepal project, not formally designated a National Pride Project. The 669 MW project is planned in tandem with Arun III. A foundation-stone ceremony was held in November 2026, while land acquisition and compensation remained underway. No physical progress percentage is reported.",
+    "updated": "23 Nov 2026",
+    "spent": "Unavailable",
+    "spentNote": "No cumulative expenditure figure identified; land compensation is reported separately.",
+    "target": "Five years under the PDA (reported Nov 2026; schedule not independently verified)",
+    "source": "Investment Board Nepal; milestone reported by Onlinekhabar",
+    "sourceUrl": "https://ibn.gov.np/uploads/documents/energy-sector-full-versionpdf-1746-815-1730779627.pdf",
+    "image": "https://english.onlinekhabar.com/wp-content/uploads/2026/11/balen-modi-4-1024x682-1.jpg",
+    "updates": [
+      {
+        "date": "23 Nov 2026",
+        "title": "Foundation stone laid",
+        "type": "Milestone",
+        "text": "The prime ministers of Nepal and India laid the foundation stone. Onlinekhabar reported a five-year PDA construction target and continuing land acquisition and compensation. This is a milestone; no physical progress percentage was published.",
+      }
+    ],
+    "changeLog": [
+      {
+        "date": "23 Nov 2026",
+        "field": "Project milestone",
+        "from": "Project development following PDA signed in 2023",
+        "to": "Foundation stone laid; physical progress percentage remains unreported",
+        "source": "Onlinekhabar",
+        "sourceUrl": "https://english.onlinekhabar.com/nepal-and-india-lay-foundation-stone-for-669-mw-lower-arun-hydropower-project.html",
+        "note": "The report says land acquisition and compensation are continuing. The ceremony is not evidence of construction completion."
+      },
+      {
+        "date": "26 Nov 2026",
+        "field": "Tracker classification",
+        "from": "Not tracked",
+        "to": "National-level Investment Board project; not a formal National Pride Project",
+        "source": "Investment Board Nepal; National Planning Commission",
+        "sourceUrl": "https://old.npc.gov.np/en/page/national_pride_projects",
+        "note": "IBN profile: https://ibn.gov.np/uploads/documents/energy-sector-full-versionpdf-1746-815-1730779627.pdf"
+      }
+    ],
+    "checklist": [
+      { "label": "Project development and PDA", "state": "Done", "date": "2023", "note": "PDA signed in June 2023, according to project reporting." },
+      { "label": "Land acquisition and compensation", "state": "Active", "date": "Nov 2026", "note": "Reported as continuing at the foundation-stone milestone." },
+      { "label": "Construction", "state": "Active", "date": "Nov 2026", "note": "Foundation stone laid; no percentage complete reported." },
+      { "label": "Testing and commissioning", "state": "Unknown", "date": "Not reported", "note": "No verified milestone date found." }
     ]
   }
 ]

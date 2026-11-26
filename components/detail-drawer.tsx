@@ -4,6 +4,7 @@ import { Building2, Check, ExternalLink, FileText, X } from 'lucide-react'
 import { formatNprOrNA, formatNprText } from '@/lib/currency'
 import { formatFiscalYearLabel } from '@/lib/fiscal-year'
 import { StatusBadge } from './shared'
+import { projectProgressLabel } from '@/lib/data'
 import { CompanyLogo } from './company-logo'
 import type { Company, Project } from '@/lib/types'
 
@@ -75,7 +76,7 @@ export function DetailDrawer({ selected, quarter, onQuarterChange, onClose }: De
             <p className="drawer-subtitle">{selected.ministry} · {selected.location}</p>
             <div className="drawer-stat"><span>Approved budget</span><strong>{formatNprText(selected.budget)}</strong></div>
             <div className="drawer-stat"><span>Reported spending</span><strong>{formatNprText(selected.spent)}</strong></div>
-            <div className="drawer-stat"><span>Physical progress</span><strong>{selected.progress}%</strong></div>
+            <div className="drawer-stat"><span>Physical progress</span><strong>{projectProgressLabel(selected)}</strong></div>
             <div className="drawer-stat"><span>Latest update</span><strong>{selected.updated}</strong></div>
             <StatusBadge status={selected.status} />
             {selected.completionNote && (

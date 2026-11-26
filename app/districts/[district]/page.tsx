@@ -158,10 +158,10 @@ export default function DistrictPage() {
       </section>
 
       <section className="place-stats">
-        <Stat icon={<Users size={15} />} label="Population" value={profile ? nf.format(profile.population) : '—'} note={profile ? `${profile.units} palikas summed` : 'census 2021'} />
-        <Stat icon={<Home size={15} />} label="Households" value={profile ? nf.format(profile.households) : '—'} note={avgHousehold ? `${avgHousehold.toFixed(1)} people / home` : ''} />
-        <Stat icon={<GraduationCap size={15} />} label="Literacy" value={profile?.literacy != null ? `${profile.literacy.toFixed(1)}%` : '—'} note="age 5+" />
-        <Stat icon={<Mountain size={15} />} label="Area" value={area?.areaSqKm != null ? `${Math.round(area.areaSqKm).toLocaleString('en-IN')} km²` : '—'} note={`${palikas.length} local units`} />
+        <Stat icon={<Users size={15} />} label="Population" value={profile ? nf.format(profile.population) : 'N/A'} note={profile ? `${profile.units} palikas summed` : 'census 2021'} />
+        <Stat icon={<Home size={15} />} label="Households" value={profile ? nf.format(profile.households) : 'N/A'} note={avgHousehold ? `${avgHousehold.toFixed(1)} people / home` : ''} />
+        <Stat icon={<GraduationCap size={15} />} label="Literacy" value={profile?.literacy != null ? `${profile.literacy.toFixed(1)}%` : 'N/A'} note="age 5+" />
+        <Stat icon={<Mountain size={15} />} label="Area" value={area?.areaSqKm != null ? `${Math.round(area.areaSqKm).toLocaleString('en-IN')} km²` : 'N/A'} note={`${palikas.length} local units`} />
       </section>
 
       <div className="place-two">
@@ -184,7 +184,7 @@ export default function DistrictPage() {
               <div className="place-wx-now">
                 <span className="wx-halo"><WeatherIcon kind={skyKind(condition)} size={62} /></span>
                 <div>
-                  <strong>{weather.temperature_2m != null ? `${Math.round(weather.temperature_2m)}°C` : '—'}</strong>
+                  <strong>{weather.temperature_2m != null ? `${Math.round(weather.temperature_2m)}°C` : 'N/A'}</strong>
                   <span>{condition}</span>
                   <small>
                     {weather.relative_humidity_2m != null ? `${Math.round(weather.relative_humidity_2m)}% humidity` : ''}
@@ -199,8 +199,8 @@ export default function DistrictPage() {
                     <div key={d.date} className="forecast-day">
                       <span>{i === 0 ? 'Today' : new Date(d.date).toLocaleDateString('en-GB', { weekday: 'short' })}</span>
                       <WeatherIcon kind={skyKind(wmoText(d.code))} size={26} />
-                      <b>{d.max != null ? `${Math.round(d.max)}°` : '—'}</b>
-                      <small>{d.min != null ? `${Math.round(d.min)}°` : '—'}</small>
+                      <b>{d.max != null ? `${Math.round(d.max)}°` : 'N/A'}</b>
+                      <small>{d.min != null ? `${Math.round(d.min)}°` : 'N/A'}</small>
                       {d.rainChance != null && <small>{d.rainChance}% rain</small>}
                     </div>
                   ))}

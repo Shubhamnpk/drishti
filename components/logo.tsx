@@ -21,18 +21,18 @@ export function Logo({ size = 32, showText = true }: LogoProps) {
         aria-label="Drishti logo"
       >
         {/* Outer circle - represents vision/awareness */}
-        <circle cx="24" cy="24" r="22" stroke={theme === 'dark' ? '#34c99a' : '#0d7c5f'} strokeWidth="2.5" opacity="0.2" />
+        <circle cx="24" cy="24" r="22" stroke={theme === 'dark' ? '#148a62' : '#0d7c5f'} strokeWidth="2.5" opacity="0.2" />
 
         {/* Inner eye shape */}
         <path
           d="M24 10C16 10 10 18 10 24C10 30 16 38 24 38C32 38 38 30 38 24C38 18 32 10 24 10Z"
-          stroke={theme === 'dark' ? '#34c99a' : '#0d7c5f'}
+          stroke={theme === 'dark' ? '#148a62' : '#0d7c5f'}
           strokeWidth="2"
-          fill={theme === 'dark' ? '#0f2e23' : '#e6f5ef'}
+          fill={theme === 'dark' ? '#103326' : '#e6f5ef'}
         />
 
         {/* Iris */}
-        <circle cx="24" cy="24" r="7" fill={theme === 'dark' ? '#34c99a' : '#0d7c5f'} />
+        <circle cx="24" cy="24" r="7" fill={theme === 'dark' ? '#148a62' : '#0d7c5f'} />
 
         {/* Pupil */}
         <circle cx="24" cy="24" r="3" fill={theme === 'dark' ? '#0a0f14' : '#ffffff'} />

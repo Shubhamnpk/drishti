@@ -70,7 +70,7 @@ function napTicks(bins: { from: number; label: string }[]): string[] {
 /** Mean for a 30-year window, with the change against the 1981–2010 baseline. */
 function periodCell(points: BipadNapPoint[] | undefined, from: number, to: number, unit: 'temp' | 'rain'): string {
   const mean = periodMean(points, from, to)
-  if (mean == null) return '—'
+  if (mean == null) return 'N/A'
   const base = periodMean(points, 1981, 2010)
   const head = unit === 'temp' ? `${mean.toFixed(1)}°C` : `${Math.round(mean)} mm`
   if (from === 1981 || base == null || base === 0) return head
@@ -237,7 +237,7 @@ export function ClimatePanel({
             Each point is a 5-year mean (change against the 1981–2010 baseline), so the chart stays readable without flattening the trend.
             The dashed stretch starts with the {PROJECT_FROM}–{PROJECT_FROM + 4} period; everything before it is the past model run. The 120
             annual points per region are reproduced from BIPAD&apos;s NAP tables, and the 30-year means and changes shown are computed here
-            from those points — not published by NAP. RCP4.5 and RCP8.5 are two emissions pathways, not two forecasts, and the spread
+            from those points, which NAP does not publish. RCP4.5 and RCP8.5 are two emissions pathways, not two forecasts, and the spread
             between model runs (`sdRcp45`/`sdRcp85`) is not drawn.
           </p>
         </>

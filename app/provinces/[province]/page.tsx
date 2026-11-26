@@ -331,11 +331,11 @@ export default function ProvincePage() {
       </section>
 
       <section className="place-stats province-facts">
-        <Stat icon={<Users size={15} />} label="Population" value={sums.population ? nf.format(sums.population) : '—'} note={sums.year ? `Census ${sums.year}` : 'Summed from districts'} />
-        <Stat icon={<Home size={15} />} label="Households" value={sums.households ? nf.format(sums.households) : '—'} note={avgHousehold ? `${avgHousehold.toFixed(1)} people / home` : ''} />
-        <Stat icon={<GraduationCap size={15} />} label="Literacy" value={literacy != null ? `${literacy.toFixed(1)}%` : '—'} note="age 5+" />
-        <Stat icon={<Mountain size={15} />} label="Area" value={provinceArea > 0 ? `${nf.format(Math.round(provinceArea))} km²` : '—'} note={`${provinceDistricts.length} districts`} />
-        <Stat icon={<MapPin size={15} />} label="Density" value={density != null ? `${nf.format(Math.round(density))}/km²` : '—'} note={sexRatio != null ? `${sexRatio.toFixed(0)} males per 100 females` : ''} />
+        <Stat icon={<Users size={15} />} label="Population" value={sums.population ? nf.format(sums.population) : 'N/A'} note={sums.year ? `Census ${sums.year}` : 'Summed from districts'} />
+        <Stat icon={<Home size={15} />} label="Households" value={sums.households ? nf.format(sums.households) : 'N/A'} note={avgHousehold ? `${avgHousehold.toFixed(1)} people / home` : ''} />
+        <Stat icon={<GraduationCap size={15} />} label="Literacy" value={literacy != null ? `${literacy.toFixed(1)}%` : 'N/A'} note="age 5+" />
+        <Stat icon={<Mountain size={15} />} label="Area" value={provinceArea > 0 ? `${nf.format(Math.round(provinceArea))} km²` : 'N/A'} note={`${provinceDistricts.length} districts`} />
+        <Stat icon={<MapPin size={15} />} label="Density" value={density != null ? `${nf.format(Math.round(density))}/km²` : 'N/A'} note={sexRatio != null ? `${sexRatio.toFixed(0)} males per 100 females` : ''} />
         <Stat icon={<Building2 size={15} />} label="Local units" value={nf.format(units.length)} note={`${kindCounts.find(k => k.kind === 'metropolitan')?.count ?? 0} metropolitan`} />
       </section>
 
@@ -374,7 +374,7 @@ export default function ProvincePage() {
               <div className="place-wx-now">
                 <span className="wx-halo"><WeatherIcon kind={skyKind(condition)} size={62} /></span>
                 <div>
-                  <strong>{weather.temperature_2m != null ? `${Math.round(weather.temperature_2m)}°C` : '—'}</strong>
+                  <strong>{weather.temperature_2m != null ? `${Math.round(weather.temperature_2m)}°C` : 'N/A'}</strong>
                   <span>{condition}</span>
                   <small>
                     {weather.relative_humidity_2m != null ? `${Math.round(weather.relative_humidity_2m)}% humidity` : ''}
@@ -389,8 +389,8 @@ export default function ProvincePage() {
                     <div key={day.date} className="forecast-day">
                       <span>{index === 0 ? 'Today' : new Date(day.date).toLocaleDateString('en-GB', { weekday: 'short' })}</span>
                       <WeatherIcon kind={skyKind(wmoText(day.code))} size={26} />
-                      <b>{day.max != null ? `${Math.round(day.max)}°` : '—'}</b>
-                      <small>{day.min != null ? `${Math.round(day.min)}°` : '—'}</small>
+                      <b>{day.max != null ? `${Math.round(day.max)}°` : 'N/A'}</b>
+                      <small>{day.min != null ? `${Math.round(day.min)}°` : 'N/A'}</small>
                       {day.rainChance != null && <small>{day.rainChance}% rain</small>}
                     </div>
                   ))}
@@ -398,9 +398,9 @@ export default function ProvincePage() {
               )}
               {climate && (
                 <div className="climate-strip">
-                  <div><span>12-month mean</span><strong>{climate.meanTemp != null ? `${climate.meanTemp.toFixed(1)}°C` : '—'}</strong></div>
-                  <div><span>12-month rainfall</span><strong>{climate.totalPrecip != null ? `${nf.format(Math.round(climate.totalPrecip))} mm` : '—'}</strong></div>
-                  <div><span>Rain days</span><strong>{climate.rainDays != null ? climate.rainDays : '—'}</strong></div>
+                  <div><span>12-month mean</span><strong>{climate.meanTemp != null ? `${climate.meanTemp.toFixed(1)}°C` : 'N/A'}</strong></div>
+                  <div><span>12-month rainfall</span><strong>{climate.totalPrecip != null ? `${nf.format(Math.round(climate.totalPrecip))} mm` : 'N/A'}</strong></div>
+                  <div><span>Rain days</span><strong>{climate.rainDays != null ? climate.rainDays : 'N/A'}</strong></div>
                 </div>
               )}
             </>
@@ -489,10 +489,10 @@ export default function ProvincePage() {
         <section className="panel province-admin">
           <div className="panel-head"><h3><Building2 size={16} /> Administration</h3></div>
           <dl className="province-admin-list">
-            <div><dt>Capital</dt><dd>{info?.capital ?? '—'}</dd></div>
+            <div><dt>Capital</dt><dd>{info?.capital ?? 'N/A'}</dd></div>
             <div><dt>Districts</dt><dd>{provinceDistricts.length}</dd></div>
             <div><dt>Local units</dt><dd>{units.length}</dd></div>
-            <div><dt>OCHA code</dt><dd>{provincePcode ?? '—'}</dd></div>
+            <div><dt>OCHA code</dt><dd>{provincePcode ?? 'N/A'}</dd></div>
           </dl>
           <div
             className="province-kind-bar"
@@ -561,11 +561,11 @@ export default function ProvincePage() {
                       <ArrowRight size={11} />
                     </Link>
                   </td>
-                  <td>{row.population != null ? nf.format(row.population) : censusLoading ? '…' : '—'}</td>
-                  <td>{row.households != null ? nf.format(row.households) : censusLoading ? '…' : '—'}</td>
-                  <td>{row.literacy != null ? `${row.literacy.toFixed(1)}%` : censusLoading ? '…' : '—'}</td>
-                  <td>{row.areaSqKm != null ? nf.format(Math.round(row.areaSqKm)) : '—'}</td>
-                  <td>{row.density != null ? nf.format(Math.round(row.density)) : '—'}</td>
+                  <td>{row.population != null ? nf.format(row.population) : censusLoading ? '…' : 'N/A'}</td>
+                  <td>{row.households != null ? nf.format(row.households) : censusLoading ? '…' : 'N/A'}</td>
+                  <td>{row.literacy != null ? `${row.literacy.toFixed(1)}%` : censusLoading ? '…' : 'N/A'}</td>
+                  <td>{row.areaSqKm != null ? nf.format(Math.round(row.areaSqKm)) : 'N/A'}</td>
+                  <td>{row.density != null ? nf.format(Math.round(row.density)) : 'N/A'}</td>
                   <td>{row.units}</td>
                 </tr>
               ))}
@@ -573,11 +573,11 @@ export default function ProvincePage() {
             <tfoot>
               <tr>
                 <td className="is-left">Province total</td>
-                <td>{sums.population ? nf.format(sums.population) : '—'}</td>
-                <td>{sums.households ? nf.format(sums.households) : '—'}</td>
-                <td>{literacy != null ? `${literacy.toFixed(1)}%` : '—'}</td>
-                <td>{provinceArea > 0 ? nf.format(Math.round(provinceArea)) : '—'}</td>
-                <td>{density != null ? nf.format(Math.round(density)) : '—'}</td>
+                <td>{sums.population ? nf.format(sums.population) : 'N/A'}</td>
+                <td>{sums.households ? nf.format(sums.households) : 'N/A'}</td>
+                <td>{literacy != null ? `${literacy.toFixed(1)}%` : 'N/A'}</td>
+                <td>{provinceArea > 0 ? nf.format(Math.round(provinceArea)) : 'N/A'}</td>
+                <td>{density != null ? nf.format(Math.round(density)) : 'N/A'}</td>
                 <td>{units.length}</td>
               </tr>
             </tfoot>

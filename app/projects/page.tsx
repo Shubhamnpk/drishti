@@ -28,10 +28,11 @@ function HeroSpotlight({ counts, wbCount }: { counts: { total: number; completed
   const budgeted = projects.map(p => parseBudgetCr(p.budget)).filter((v): v is number => v != null)
   const totalCr = budgeted.reduce((a, b) => a + b, 0)
   const totalLabel = formatNpr(totalCr * 1e7)
-  const avg = Math.round(projects.reduce((a, p) => a + p.progress, 0) / Math.max(1, projects.length))
+  const withProgress = projects.filter((p): p is typeof p & { progress: number } => p.progress != null)
+  const avg = Math.round(withProgress.reduce((a, p) => a + p.progress, 0) / Math.max(1, withProgress.length))
   const spotlight = [...projects]
-    .filter(p => p.status === 'Delayed' || p.status === 'At risk')
-    .sort((a, b) => a.progress - b.progress)[0]
+    .filter(p => (p.status === 'Delayed' || p.status === 'At risk') && p.progress != null)
+    .sort((a, b) => (a.progress ?? 0) - (b.progress ?? 0))[0]
   return (
     <div style={{ background: 'rgba(255,255,255,.1)', border: '1px solid rgba(255,255,255,.22)', borderRadius: 16, padding: '1.1rem 1.2rem', backdropFilter: 'blur(10px)' }}>
       <p style={{ margin: 0, fontSize: '.58rem', fontWeight: 700, letterSpacing: '.12em', opacity: .7 }}>PORTFOLIO VALUE TRACKED</p>
@@ -49,9 +50,9 @@ function HeroSpotlight({ counts, wbCount }: { counts: { total: number; completed
           <strong style={{ display: 'block', fontSize: '.8rem', marginTop: '.15rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{spotlight.name}</strong>
           <span style={{ display: 'flex', alignItems: 'center', gap: '.45rem', marginTop: '.4rem' }}>
             <span style={{ flex: 1, height: 5, borderRadius: 99, background: 'rgba(255,255,255,.2)', overflow: 'hidden' }}>
-              <span style={{ display: 'block', height: '100%', width: `${spotlight.progress}%`, background: '#f87171', borderRadius: 99 }} />
+              <span style={{ display: 'block', height: '100%', width: `${spotlight.progress ?? 0}%`, background: '#f87171', borderRadius: 99 }} />
             </span>
-            <span style={{ fontSize: '.66rem', fontWeight: 700 }}>{spotlight.progress}%</span>
+            <span style={{ fontSize: '.66rem', fontWeight: 700 }}>{spotlight.progress ?? 'Not reported'}{spotlight.progress != null ? '%' : ''}</span>
           </span>
         </Link>
       )}
@@ -106,7 +107,11 @@ export default function ProjectsPage() {
         return sort === 'Budget ↓' ? bv - av : av - bv
       })
     } else if (sort === 'Progress ↓' || sort === 'Progress ↑') {
-      out = [...out].sort((a, b) => (sort === 'Progress ↓' ? b.progress - a.progress : a.progress - b.progress))
+      out = [...out].sort((a, b) => {
+        const av = a.progress ?? -1
+        const bv = b.progress ?? -1
+        return sort === 'Progress ↓' ? bv - av : av - bv
+      })
     } else if (sort === 'Name A-Z') {
       out = [...out].sort((a, b) => a.name.localeCompare(b.name))
     }
@@ -364,7 +369,7 @@ export default function ProjectsPage() {
                   <div className="project-progress">
                     <div>
                       <span>Physical progress</span>
-                      <strong>{p.progress}%</strong>
+                      <strong>{p.progress == null ? 'Not reported' : `${p.progress}%`}</strong>
                     </div>
                   </div>
                   <div className="project-meta">

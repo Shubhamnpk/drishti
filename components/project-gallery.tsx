@@ -43,7 +43,7 @@ export function ProjectGallery({ images, projectName }: ProjectGalleryProps) {
             onClick={() => showImage(index)}
             aria-label={`Open image ${index + 1} of ${images.length} for ${projectName}`}
           >
-            <img src={src} alt={`${projectName} — photo ${index + 1}`} loading={index === 0 ? 'eager' : 'lazy'} />
+            <img src={src} alt={`Photo ${index + 1} for ${projectName}`} loading={index === 0 ? 'eager' : 'lazy'} />
             <span className="project-gallery-expand"><Expand size={15} /> View</span>
           </button>
         ))}
@@ -63,7 +63,7 @@ export function ProjectGallery({ images, projectName }: ProjectGalleryProps) {
               </div>
             </header>
             <div className="gallery-stage">
-              <img src={images[activeIndex]} alt={`${projectName} — photo ${activeIndex + 1}`} />
+              <img src={images[activeIndex]} alt={`Photo ${activeIndex + 1} for ${projectName}`} />
               {images.length > 1 && <>
                 <button type="button" className="gallery-arrow previous" onClick={() => showImage(activeIndex - 1)} aria-label="Previous image"><ChevronLeft size={22} /></button>
                 <button type="button" className="gallery-arrow next" onClick={() => showImage(activeIndex + 1)} aria-label="Next image"><ChevronRight size={22} /></button>

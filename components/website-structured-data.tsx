@@ -18,7 +18,7 @@ const organizationData = {
   url: `${SITE_URL}/`,
   logo: {
     '@type': 'ImageObject',
-    url: `${SITE_URL}/icon.svg`,
+    url: `${SITE_URL}/icon-512.png`,
     caption: `${SITE_NAME} logo`,
   },
   description:

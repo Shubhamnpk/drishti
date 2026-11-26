@@ -525,7 +525,7 @@ export function NationalMap3D({ basemap, center, zoom, bounds, boundaries, admin
       {loading && !initError && <div className="atlas-terrain-loading"><span className="atlas-terrain-spinner" /><span><strong>Loading terrain</strong><small>Preparing elevation and imagery…</small></span></div>}
       {initError && <div className="atlas-3d-fallback">
         <strong>{initError === 'webgl2' ? '3D view needs WebGL2' : '3D renderer failed to load'}</strong>
-        <span>Same engine Google Earth uses — your browser couldn't create a WebGL2 context. Usually that means hardware acceleration is off. In Chrome or Edge: Settings → System → turn on “Use hardware acceleration”, then reload. Still stuck? Update your graphics driver or try another browser.</span>
+        <span>Same engine Google Earth uses. Your browser couldn't create a WebGL2 context. Usually that means hardware acceleration is off. In Chrome or Edge: Settings → System → turn on “Use hardware acceleration”, then reload. Still stuck? Update your graphics driver or try another browser.</span>
         <div className="atlas-3d-fallback-actions">
           <button type="button" onClick={() => { setInitError(null); setLoading(true); setAttempt(a => a + 1) }}>Try 3D again</button>
           <button type="button" className="is-ghost" onClick={onFallback}>Switch to 2D</button>

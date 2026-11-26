@@ -99,7 +99,7 @@ export type Project = {
   province?: 'Koshi' | 'Madhesh' | 'Bagmati' | 'Gandaki' | 'Lumbini' | 'Karnali' | 'Sudurpashchim' | 'National'
   budget: string
   budgetNote?: string
-  progress: number
+  progress: number | null
   status: 'On track' | 'At risk' | 'Delayed' | 'Completed'
   category: 'Hydropower' | 'Power' | 'Highway' | 'Airport' | 'Irrigation' | 'Water' | 'Heritage' | 'Sports' | 'Rail' | 'Conservation'
   description?: string

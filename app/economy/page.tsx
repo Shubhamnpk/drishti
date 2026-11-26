@@ -1,12 +1,13 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useState, useCallback } from 'react'
-import { ArrowUpRight, ArrowDownRight, TrendingUp, TrendingDown, BarChart3, Users, Zap, Globe2, Heart, GraduationCap, Leaf, Landmark, Banknote, ChartLine, Info, X, Maximize2 } from 'lucide-react'
+import { useEffect, useState, useCallback, useRef } from 'react'
+import { ArrowUpRight, ArrowDownRight, TrendingUp, TrendingDown, BarChart3, Users, Zap, Globe2, Heart, GraduationCap, Leaf, Landmark, Banknote, ChartLine, Info, X, Maximize2, Download, Table2, Image, Copy, Check, Share2 } from 'lucide-react'
 import { BarChart, LineChart } from '@/components/charts'
 import { fetchEconomyData, pctChange, type EconomyData, type WbDataPoint } from '@/lib/api'
 import { formatNpr, formatNprRate, formatFxPair, formatNum, formatUsd, NPR_SYMBOL, USD_SYMBOL } from '@/lib/currency'
 import { getNrbUsdRate } from '@/lib/nrb'
+import { SITE_URL } from '@/lib/site'
 import type { NepseMarketPulse } from '@/lib/types'
 
 const RANGE_OPTIONS = [
@@ -16,12 +17,30 @@ const RANGE_OPTIONS = [
   { key: '10', label: '10Y' },
   { key: 'max', label: 'Max' },
 ] as const
-type RangeKey = typeof RANGE_OPTIONS[number]['key']
+type RangeKey = typeof RANGE_OPTIONS[number]['key'] | 'custom'
 
 /** Keep the last N points from the series itself (or everything for 'max'). */
 function rangeData(data: WbDataPoint[], range: RangeKey): WbDataPoint[] {
   const clean = data.filter(d => d.value != null)
-  return range === 'max' ? clean : clean.slice(-Number(range))
+  return range === 'max' || range === 'custom' ? clean : clean.slice(-Number(range))
+}
+
+function csvCell(value: string | number): string {
+  const text = String(value)
+  return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text
+}
+
+function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob)
+  const anchor = document.createElement('a')
+  anchor.href = url
+  anchor.download = filename
+  anchor.click()
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000)
+}
+
+function fileSlug(value: string): string {
+  return value.toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'economy-data'
 }
 
 const CURRENT_YEAR = String(new Date().getFullYear())
@@ -59,8 +78,27 @@ function signed(n: number, digits = 2): string {
   return `${n >= 0 ? '+' : ''}${n.toFixed(digits)}`
 }
 
+/** IMF WEO nominal GDP is published in billions; World Bank GDP is in dollars. */
+function imfGdpUsd(valueInBillions: number): number {
+  return valueInBillions * 1_000_000_000
+}
+
 function formatImfGdp(valueInBillions: number): string {
-  return formatUsd(valueInBillions * 1_000_000_000)
+  return formatUsd(imfGdpUsd(valueInBillions))
+}
+
+function formatTrendTooltip(value: number, label: string, unit?: string, displayValue?: string): string {
+  if (label === 'GDP, nominal') return formatImfGdp(value)
+  if (displayValue?.includes('%') || /%|of GDP|of total|of population|of labor force|net rate/i.test(unit ?? '')) {
+    return `${value.toFixed(1)}%`
+  }
+  if (displayValue?.includes('yrs')) return `${value.toFixed(1)} yrs`
+  if (displayValue?.includes('‰')) return `${value.toFixed(1)}‰`
+  if (label === 'Mobile subscriptions') return `${value.toFixed(1)} per 100 people`
+  if (label === 'Energy use pc') return `${value.toFixed(0)} kg oil eq.`
+  if (label === 'GDP per capita' || label.includes('PPP')) return formatUsd(value)
+  if (label === 'GINI inequality') return value.toFixed(1)
+  return value.toLocaleString(undefined, { maximumFractionDigits: 2 })
 }
 
 type ModalData = {
@@ -109,10 +147,13 @@ function Stat({ icon: Icon, label, value, change, color, sparkData, sparkForecas
   )
 }
 
-function TrendCard({ icon: Icon, label, value, unit, data, color, wide, onExpand, delta, spark, forecastFrom }: {
-  icon: React.ElementType; label: string; value: string; unit?: string; data: WbDataPoint[]; color: string; wide?: boolean; onExpand?: () => void; delta?: number; spark?: WbDataPoint[]; forecastFrom?: number
+function TrendCard({ icon: Icon, label, value, unit, data, color, wide, onExpand, delta, spark, forecastFrom, previewYears = 5, showYAxis = false }: {
+  icon: React.ElementType; label: string; value: string; unit?: string; data: WbDataPoint[]; color: string; wide?: boolean; onExpand?: () => void; delta?: number; spark?: WbDataPoint[]; forecastFrom?: number; previewYears?: number; showYAxis?: boolean
 }) {
-  const view = spark && spark.length > 1 ? spark : data
+  const series = spark && spark.length > 1 ? spark : data
+  const view = forecastFrom == null
+    ? series.slice(-previewYears)
+    : series.filter(point => Number(point.year) >= forecastFrom - 3 && Number(point.year) <= forecastFrom + 1).slice(-5)
   const first = data[0]?.value ?? 0
   const last = data[data.length - 1]?.value ?? 0
   const change = delta ?? pctChange(last, first)
@@ -134,7 +175,7 @@ function TrendCard({ icon: Icon, label, value, unit, data, color, wide, onExpand
         {unit && <span style={{ fontSize: '.6rem', color: 'var(--text-tertiary)' }}>{unit}</span>}
       </div>
       <div style={{ marginTop: '.5rem' }}>
-        <LineChart data={view} color={color} height={wide ? 85 : 72} showArea forecastFrom={forecastFrom} formatValue={() => ''} />
+        <LineChart data={view} color={color} height={wide ? 85 : 72} showArea forecastFrom={forecastFrom} yAxis={showYAxis} formatValue={v => formatTrendTooltip(v, label, unit, value)} />
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '.52rem', color: 'var(--text-tertiary)', marginTop: '.25rem' }}>
         <span>{view[0]?.year}</span>
@@ -209,10 +250,33 @@ export default function EconomyPage() {
   const [modal, setModal] = useState<ModalData | null>(null)
   const [chartType, setChartType] = useState<'area' | 'line' | 'bar'>('area')
   const [timeRange, setTimeRange] = useState<RangeKey>('5')
+  const [customStart, setCustomStart] = useState('')
+  const [customEnd, setCustomEnd] = useState('')
+  const [viewMode, setViewMode] = useState<'chart' | 'table'>('chart')
+  const [exportMenuOpen, setExportMenuOpen] = useState(false)
+  const [citationCopied, setCitationCopied] = useState(false)
+  const chartRef = useRef<HTMLDivElement>(null)
+  const exportMenuRef = useRef<HTMLDivElement>(null)
   const [liveNrb, setLiveNrb] = useState<number | null>(null)
   const [imfSource, setImfSource] = useState<string | null>(null)
   const [market, setMarket] = useState<NepseMarketPulse | null>(null)
   const [marketError, setMarketError] = useState(false)
+
+  useEffect(() => {
+    if (!exportMenuOpen) return
+    const dismissOutside = (event: PointerEvent) => {
+      if (!exportMenuRef.current?.contains(event.target as Node)) setExportMenuOpen(false)
+    }
+    const dismissEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setExportMenuOpen(false)
+    }
+    document.addEventListener('pointerdown', dismissOutside, true)
+    document.addEventListener('keydown', dismissEscape)
+    return () => {
+      document.removeEventListener('pointerdown', dismissOutside, true)
+      document.removeEventListener('keydown', dismissEscape)
+    }
+  }, [exportMenuOpen])
 
   useEffect(() => {
     // /api/imf is the authoritative set: the IMF SDMX `WEO` flow (live vintage,
@@ -221,7 +285,7 @@ export default function EconomyPage() {
     // merge the server payload over it.
     Promise.all([
       fetchEconomyData(),
-      fetch('/api/imf')
+      fetch('/api/imf?nominal-gdp-unit=billions-v2', { cache: 'no-store' })
         .then(r => r.ok ? r.json() as Promise<{ series?: Partial<EconomyData>; version?: string | null }> : null)
         .catch(() => null),
     ])
@@ -245,8 +309,21 @@ export default function EconomyPage() {
 
   const latest = (arr: WbDataPoint[]) => arr[arr.length - 1]
   const prev = (arr: WbDataPoint[]) => arr.length >= 2 ? arr[arr.length - 2] : null
-  const openModal = useCallback((m: ModalData) => { setModal(m); setChartType('area'); setTimeRange(m.forecastFrom ? '10' : '5') }, [])
-  const modalFmt = useCallback((m: ModalData) => (v: number) => m.unit?.includes('%') ? `${v.toFixed(1)}%` : v >= 1e9 ? formatUsd(v) : formatNum(v), [])
+  const openModal = useCallback((m: ModalData) => {
+    const years = m.data.filter(point => point.value != null).map(point => point.year).sort((a, b) => Number(a) - Number(b))
+    setModal(m)
+    setChartType('area')
+    setTimeRange('max')
+    setCustomStart(years[0] ?? '')
+    setCustomEnd(years[years.length - 1] ?? '')
+    setViewMode('chart')
+    setExportMenuOpen(false)
+    setCitationCopied(false)
+  }, [])
+  const modalFmt = useCallback((m: ModalData) => (v: number) => {
+    if (m.label === 'GDP, nominal') return formatImfGdp(v)
+    return m.unit?.includes('%') ? `${v.toFixed(1)}%` : v >= 1e9 ? formatUsd(v) : formatNum(v)
+  }, [])
 
   if (error) return (
     <div style={{ textAlign: 'center', padding: '6rem 2rem' }}>
@@ -283,7 +360,7 @@ export default function EconomyPage() {
   const gdpForecastPoints = data.imfNominalGdp.flatMap(point => {
     const year = Number(point.year)
     return point.value != null && year >= FORECAST_START && year <= FORECAST_START + 1
-      ? [{ year: point.year, value: point.value * 1_000_000_000 }]
+      ? [{ year: point.year, value: imfGdpUsd(point.value) }]
       : []
   })
   const gdpHeroChart = [
@@ -312,7 +389,7 @@ export default function EconomyPage() {
   const fmtPct = (v: number) => `${v.toFixed(1)}%`
   const outlookCards: { icon: React.ElementType; label: string; d: WbDataPoint[]; color: string; fmt: (v: number) => string; unit: string }[] = [
     { icon: TrendingUp, label: 'Real GDP growth', d: data.imfGdpGrowth, color: 'var(--primary)', fmt: fmtPct, unit: 'annual %' },
-    { icon: Globe2, label: 'GDP, nominal', d: data.imfNominalGdp, color: '#6366f1', fmt: formatImfGdp, unit: 'US$, current prices' },
+    { icon: Globe2, label: 'GDP, nominal', d: data.imfNominalGdp, color: '#6366f1', fmt: formatImfGdp, unit: 'US$ billions, current prices' },
     { icon: Users, label: 'GDP per capita', d: data.imfGdpPerCapita, color: '#3b82f6', fmt: formatUsd, unit: 'US$ per person' },
     { icon: Globe2, label: 'GDP (PPP)', d: data.imfGdpPpp, color: '#8b5cf6', fmt: formatUsd, unit: 'international $, PPP' },
     { icon: Users, label: 'GDP per capita (PPP)', d: data.imfPppPerCapita, color: '#8b5cf6', fmt: formatUsd, unit: 'int$ PPP per person' },
@@ -339,9 +416,104 @@ export default function EconomyPage() {
   const imfCur = pickCurrent(data.imfGdpGrowth)
   const imfPrev = imfCur ? pickPrev(data.imfGdpGrowth, imfCur.year) : null
 
-  const modalShown = modal ? rangeData(modal.data, timeRange) : []
+  const modalYears = modal ? [...new Set(modal.data.filter(point => point.value != null).map(point => point.year))].sort((a, b) => Number(a) - Number(b)) : []
+  const modalShown = modal
+    ? rangeData(modal.data, timeRange).filter(point => timeRange !== 'custom' || ((customStart === '' || Number(point.year) >= Number(customStart)) && (customEnd === '' || Number(point.year) <= Number(customEnd))))
+    : []
   const modalHasActual = !!modal?.forecastFrom && modalShown.some(d => Number(d.year) < modal.forecastFrom!)
   const modalHasForecast = !!modal?.forecastFrom && modalShown.some(d => Number(d.year) >= modal.forecastFrom!)
+  const modalSource = modal?.forecastFrom ? (imfSource ?? 'IMF World Economic Outlook') : 'World Bank Open Data'
+  const modalSourceUrl = modal?.forecastFrom ? 'https://www.imf.org/en/Publications/WEO' : 'https://data.worldbank.org/country/nepal'
+  const modalAccessed = new Intl.DateTimeFormat('en', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date())
+  const modalCitation = modal ? `Drishti. “${modal.label}.” Economy data, ${SITE_URL}/economy. Accessed ${modalAccessed}. Source: ${modalSource} (${modalSourceUrl}).` : ''
+  const modalUnit = modal?.unit?.split(', solid')[0] ?? 'source units'
+
+  const downloadCsv = () => {
+    if (!modal) return
+    const rows: (string | number)[][] = [
+      ['year', 'value', 'unit', 'status', 'indicator', 'source', 'source_url', 'citation'],
+      ...modalShown.map(point => [
+        point.year,
+        point.value ?? '',
+        modalUnit,
+        modal.forecastFrom && Number(point.year) >= modal.forecastFrom ? 'forecast' : 'actual',
+        modal.label,
+        modalSource,
+        modalSourceUrl,
+        modalCitation,
+      ]),
+    ]
+    const csv = `\uFEFF${rows.map(row => row.map(csvCell).join(',')).join('\r\n')}`
+    const from = modalShown[0]?.year ?? 'empty'
+    const to = modalShown[modalShown.length - 1]?.year ?? 'range'
+    downloadBlob(new Blob([csv], { type: 'text/csv;charset=utf-8' }), `${fileSlug(modal.label)}-${from}-${to}.csv`)
+  }
+
+  const exportChart = async (format: 'svg' | 'png') => {
+    if (!modal) return
+    const sourceSvg = chartRef.current?.querySelector('svg.recharts-surface')
+    if (!sourceSvg) return
+    const clone = sourceSvg.cloneNode(true) as SVGSVGElement
+    const [,, viewWidth, viewHeight] = (clone.getAttribute('viewBox') ?? `0 0 ${sourceSvg.clientWidth} ${sourceSvg.clientHeight}`).split(/\s+/).map(Number)
+    const footerHeight = 30
+    const width = viewWidth || sourceSvg.clientWidth
+    const height = (viewHeight || sourceSvg.clientHeight) + footerHeight
+    const namespace = 'http://www.w3.org/2000/svg'
+    clone.setAttribute('xmlns', namespace)
+    clone.setAttribute('width', String(width * 2))
+    clone.setAttribute('height', String(height * 2))
+    clone.setAttribute('viewBox', `0 0 ${width} ${height}`)
+    clone.style.width = `${width * 2}px`
+    clone.style.height = `${height * 2}px`
+    const background = document.createElementNS(namespace, 'rect')
+    background.setAttribute('width', String(width))
+    background.setAttribute('height', String(height))
+    background.setAttribute('fill', getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() || '#fff')
+    clone.insertBefore(background, clone.firstChild)
+    const title = document.createElementNS(namespace, 'title')
+    title.textContent = `${modal.label} · ${modalShown[0]?.year ?? ''}–${modalShown[modalShown.length - 1]?.year ?? ''}`
+    clone.insertBefore(title, background.nextSibling)
+    const citationLine = document.createElementNS(namespace, 'text')
+    citationLine.setAttribute('x', '12')
+    citationLine.setAttribute('y', String(height - 9))
+    citationLine.setAttribute('fill', getComputedStyle(document.documentElement).getPropertyValue('--text-secondary').trim() || '#5f6872')
+    citationLine.setAttribute('font-size', '10')
+    citationLine.textContent = `Source: ${modalSource} · Drishti ${SITE_URL}/economy`
+    clone.appendChild(citationLine)
+    const svgBlob = new Blob([new XMLSerializer().serializeToString(clone)], { type: 'image/svg+xml;charset=utf-8' })
+    const baseName = `${fileSlug(modal.label)}-${modalShown[0]?.year ?? 'range'}-${modalShown[modalShown.length - 1]?.year ?? ''}`
+    if (format === 'svg') {
+      downloadBlob(svgBlob, `${baseName}.svg`)
+      return
+    }
+    const objectUrl = URL.createObjectURL(svgBlob)
+    try {
+      const image = new window.Image()
+      image.src = objectUrl
+      await image.decode()
+      const canvas = document.createElement('canvas')
+      canvas.width = width * 2
+      canvas.height = height * 2
+      const context = canvas.getContext('2d')
+      if (!context) return
+      context.drawImage(image, 0, 0, canvas.width, canvas.height)
+      const png = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/png'))
+      if (png) downloadBlob(png, `${baseName}.png`)
+    } finally {
+      URL.revokeObjectURL(objectUrl)
+    }
+  }
+
+  const copyCitation = async () => {
+    if (!modalCitation) return
+    try {
+      await navigator.clipboard.writeText(modalCitation)
+      setCitationCopied(true)
+      window.setTimeout(() => setCitationCopied(false), 1800)
+    } catch {
+      setCitationCopied(false)
+    }
+  }
 
   return (
     <>
@@ -382,6 +554,8 @@ export default function EconomyPage() {
                 height={150}
                 showArea
                 showForecastDots={gdpForecastPoints.length > 0}
+                showForecastChange
+                tickColor="rgba(255,255,255,.76)"
                 forecastFrom={gdpForecastPoints.length ? FORECAST_START : undefined}
                 formatValue={v => formatUsd(v)}
               />
@@ -562,17 +736,17 @@ export default function EconomyPage() {
             <h3 style={{ fontFamily: 'var(--font-serif)', fontWeight: 500, fontSize: '1.3rem', margin: '.15rem 0 0' }}>What Nepal makes, and how it connects</h3>
             <p className="muted" style={{ marginBottom: '.6rem' }}>Sector shares, fairness, energy and the digital leap.</p>
             <div className="grid-auto">
-              <TrendCard icon={Leaf} label="Agriculture" value={`${(latest(data.agriculture)?.value ?? 0).toFixed(1)}%`} unit={`of GDP · ${latest(data.agriculture)?.year}`} data={data.agriculture} color="#16a34a" onExpand={() => openModal({ label: 'Agriculture (% of GDP)', value: `${(latest(data.agriculture)?.value ?? 0).toFixed(1)}%`, unit: 'sector share', data: data.agriculture, color: '#16a34a', icon: Leaf })} />
-              <TrendCard icon={Zap} label="Industry" value={`${(latest(data.industry)?.value ?? 0).toFixed(1)}%`} unit={`of GDP · ${latest(data.industry)?.year}`} data={data.industry} color="#e0a351" onExpand={() => openModal({ label: 'Industry (% of GDP)', value: `${(latest(data.industry)?.value ?? 0).toFixed(1)}%`, unit: 'sector share', data: data.industry, color: '#e0a351', icon: Zap })} />
-              <TrendCard icon={ChartLine} label="Services" value={`${(latest(data.services)?.value ?? 0).toFixed(1)}%`} unit={`of GDP · ${latest(data.services)?.year}`} data={data.services} color="#8b5cf6" onExpand={() => openModal({ label: 'Services (% of GDP)', value: `${(latest(data.services)?.value ?? 0).toFixed(1)}%`, unit: 'sector share', data: data.services, color: '#8b5cf6', icon: ChartLine })} />
+              <TrendCard icon={Leaf} label="Agriculture" value={`${(latest(data.agriculture)?.value ?? 0).toFixed(1)}%`} unit={`of GDP · ${latest(data.agriculture)?.year}`} data={data.agriculture} color="#16a34a" onExpand={() => openModal({ label: 'Agriculture (% of GDP)', value: `${(latest(data.agriculture)?.value ?? 0).toFixed(1)}%`, unit: '% of GDP', data: data.agriculture, color: '#16a34a', icon: Leaf })} />
+              <TrendCard icon={Zap} label="Industry" value={`${(latest(data.industry)?.value ?? 0).toFixed(1)}%`} unit={`of GDP · ${latest(data.industry)?.year}`} data={data.industry} color="#e0a351" onExpand={() => openModal({ label: 'Industry (% of GDP)', value: `${(latest(data.industry)?.value ?? 0).toFixed(1)}%`, unit: '% of GDP', data: data.industry, color: '#e0a351', icon: Zap })} />
+              <TrendCard icon={ChartLine} label="Services" value={`${(latest(data.services)?.value ?? 0).toFixed(1)}%`} unit={`of GDP · ${latest(data.services)?.year}`} data={data.services} color="#8b5cf6" onExpand={() => openModal({ label: 'Services (% of GDP)', value: `${(latest(data.services)?.value ?? 0).toFixed(1)}%`, unit: '% of GDP', data: data.services, color: '#8b5cf6', icon: ChartLine })} />
               <TrendCard icon={BarChart3} label="GINI inequality" value={data.gini.length ? `${(latest(data.gini)?.value ?? 0).toFixed(1)}` : 'N/A'} unit={data.gini.length ? `0=equal · ${latest(data.gini)?.year}` : undefined} data={data.gini} color="var(--warning)" onExpand={() => openModal({ label: 'GINI index', value: `${(latest(data.gini)?.value ?? 0).toFixed(1)}`, unit: '0 = perfectly equal, 100 = unequal', data: data.gini, color: 'var(--warning)', icon: BarChart3 })} />
               <TrendCard icon={Users} label="Poverty headcount" value={data.poverty.length ? `${(latest(data.poverty)?.value ?? 0).toFixed(1)}%` : 'N/A'} unit={data.poverty.length ? `under $2.15/day · ${latest(data.poverty)?.year}` : undefined} data={data.poverty} color="var(--danger)" onExpand={() => openModal({ label: 'Poverty headcount', value: `${(latest(data.poverty)?.value ?? 0).toFixed(1)}%`, unit: 'share under $2.15/day', data: data.poverty, color: 'var(--danger)', icon: Users })} />
-              <TrendCard icon={Landmark} label="Urban population" value={`${(latest(data.urbanPopulation)?.value ?? 0).toFixed(1)}%`} unit={`of total · ${latest(data.urbanPopulation)?.year}`} data={data.urbanPopulation} color="#6366f1" onExpand={() => openModal({ label: 'Urban population', value: `${(latest(data.urbanPopulation)?.value ?? 0).toFixed(1)}%`, unit: 'share living in cities', data: data.urbanPopulation, color: '#6366f1', icon: Landmark })} />
-              <TrendCard icon={Zap} label="Internet users" value={`${(latest(data.internetUsers)?.value ?? 0).toFixed(1)}%`} unit={`of population · ${latest(data.internetUsers)?.year}`} data={data.internetUsers} color="var(--primary)" onExpand={() => openModal({ label: 'Internet users', value: `${(latest(data.internetUsers)?.value ?? 0).toFixed(1)}%`, unit: 'share of population online', data: data.internetUsers, color: 'var(--primary)', icon: Zap })} />
+              <TrendCard icon={Landmark} label="Urban population" value={`${(latest(data.urbanPopulation)?.value ?? 0).toFixed(1)}%`} unit={`of total · ${latest(data.urbanPopulation)?.year}`} data={data.urbanPopulation} color="#6366f1" onExpand={() => openModal({ label: 'Urban population', value: `${(latest(data.urbanPopulation)?.value ?? 0).toFixed(1)}%`, unit: '% of population', data: data.urbanPopulation, color: '#6366f1', icon: Landmark })} />
+              <TrendCard icon={Zap} label="Internet users" value={`${(latest(data.internetUsers)?.value ?? 0).toFixed(1)}%`} unit={`of population · ${latest(data.internetUsers)?.year}`} data={data.internetUsers} color="var(--primary)" onExpand={() => openModal({ label: 'Internet users', value: `${(latest(data.internetUsers)?.value ?? 0).toFixed(1)}%`, unit: '% of population', data: data.internetUsers, color: 'var(--primary)', icon: Zap })} />
               <TrendCard icon={Globe2} label="Mobile subscriptions" value={data.mobileSubs.length ? `${(latest(data.mobileSubs)?.value ?? 0).toFixed(0)}` : 'N/A'} unit={data.mobileSubs.length ? `per 100 people · ${latest(data.mobileSubs)?.year}` : undefined} data={data.mobileSubs} color="#3b82f6" onExpand={() => openModal({ label: 'Mobile subscriptions', value: `${(latest(data.mobileSubs)?.value ?? 0).toFixed(0)}`, unit: 'subscriptions per 100 people', data: data.mobileSubs, color: '#3b82f6', icon: Globe2 })} />
-              <TrendCard icon={GraduationCap} label="Primary enrollment" value={data.primaryEnrollment.length ? `${(latest(data.primaryEnrollment)?.value ?? 0).toFixed(1)}%` : 'N/A'} unit={data.primaryEnrollment.length ? `net rate · ${latest(data.primaryEnrollment)?.year}` : undefined} data={data.primaryEnrollment} color="#16a34a" onExpand={() => openModal({ label: 'Primary enrollment', value: `${(latest(data.primaryEnrollment)?.value ?? 0).toFixed(1)}%`, unit: 'net enrollment rate, primary', data: data.primaryEnrollment, color: '#16a34a', icon: GraduationCap })} />
+              <TrendCard icon={GraduationCap} label="Primary enrollment" value={data.primaryEnrollment.length ? `${(latest(data.primaryEnrollment)?.value ?? 0).toFixed(1)}%` : 'N/A'} unit={data.primaryEnrollment.length ? `net rate · ${latest(data.primaryEnrollment)?.year}` : undefined} data={data.primaryEnrollment} color="#16a34a" onExpand={() => openModal({ label: 'Primary enrollment', value: `${(latest(data.primaryEnrollment)?.value ?? 0).toFixed(1)}%`, unit: '% net enrollment rate, primary', data: data.primaryEnrollment, color: '#16a34a', icon: GraduationCap })} />
               <TrendCard icon={Zap} label="Electricity access" value={elecL ? `${(elecL.value ?? 0).toFixed(1)}%` : 'N/A'} unit="% of population" data={data.electricityAccess} color="var(--primary)" onExpand={() => openModal({ label: 'Electricity access', value: elecL ? `${(elecL.value ?? 0).toFixed(1)}%` : 'N/A', unit: '% of population', data: data.electricityAccess, color: 'var(--primary)', icon: Zap })} />
-              <TrendCard icon={Leaf} label="Renewable energy" value={renewL ? `${(renewL.value ?? 0).toFixed(1)}%` : 'N/A'} unit="% of total energy" data={data.renewableEnergy} color="#16a34a" onExpand={() => openModal({ label: 'Renewable energy', value: renewL ? `${(renewL.value ?? 0).toFixed(1)}%` : 'N/A', unit: '% of total energy', data: data.renewableEnergy, color: '#16a34a', icon: Leaf })} />
+              <TrendCard icon={Leaf} label="Renewable energy" value={renewL ? `${(renewL.value ?? 0).toFixed(1)}%` : 'N/A'} unit="% of total energy" data={data.renewableEnergy} color="#16a34a" onExpand={() => openModal({ label: 'Renewable energy', value: renewL ? `${(renewL.value ?? 0).toFixed(1)}%` : 'N/A', unit: '% of total energy consumption', data: data.renewableEnergy, color: '#16a34a', icon: Leaf })} />
               <TrendCard icon={Leaf} label="Forest area" value={data.forestArea.length ? `${(latest(data.forestArea)?.value ?? 0).toFixed(1)}%` : 'N/A'} unit={data.forestArea.length ? `% of land · ${latest(data.forestArea)?.year}` : undefined} data={data.forestArea} color="#16a34a" onExpand={() => openModal({ label: 'Forest area', value: data.forestArea.length ? `${(latest(data.forestArea)?.value ?? 0).toFixed(1)}%` : 'N/A', unit: '% of land area', data: data.forestArea, color: '#16a34a', icon: Leaf })} />
               <TrendCard icon={Zap} label="Energy use pc" value={data.energyUse.length ? `${(latest(data.energyUse)?.value ?? 0).toFixed(0)}` : 'N/A'} unit={data.energyUse.length ? `kg oil eq. · ${latest(data.energyUse)?.year}` : undefined} data={data.energyUse} color="#e0a351" onExpand={() => openModal({ label: 'Energy use per capita', value: data.energyUse.length ? `${(latest(data.energyUse)?.value ?? 0).toFixed(0)}` : 'N/A', unit: 'kg of oil equivalent per person', data: data.energyUse, color: '#e0a351', icon: Zap })} />
             </div>
@@ -737,7 +911,7 @@ export default function EconomyPage() {
               <p className="muted" style={{ marginBottom: '.6rem' }}>IMF World Economic Outlook: history through {FORECAST_START - 1}, projections {FORECAST_START}–{outlookYear}{imfSource ? ` · ${imfSource}` : ''}. Solid = actual, dashed = forecast. Click any card to explore.</p>
               <div className="grid-auto">
                 {outlook.map(c => (
-                  <TrendCard key={c.label} icon={c.icon} label={c.label} value={c.cur ? c.fmt(c.cur.value ?? 0) : '-'} unit={c.cur ? `${c.unit} · ${c.cur.year}${Number(c.cur.year) >= Number(CURRENT_YEAR) ? ' forecast' : ''}` : c.unit} data={c.d} spark={c.d.slice(-16)} forecastFrom={FORECAST_START} delta={c.delta} color={c.color} wide onExpand={() => openModal({ label: `${c.label} (IMF)`, value: c.cur ? c.fmt(c.cur.value ?? 0) : '-', unit: `${c.unit}, solid = actual · dashed = forecast`, data: c.d, color: c.color, icon: c.icon, forecastFrom: FORECAST_START })} />
+                  <TrendCard key={c.label} icon={c.icon} label={c.label} value={c.cur ? c.fmt(c.cur.value ?? 0) : '-'} unit={c.cur ? `${c.unit} · ${c.cur.year}${Number(c.cur.year) >= Number(CURRENT_YEAR) ? ' forecast' : ''}` : c.unit} data={c.d} spark={c.d.slice(-16)} previewYears={5} showYAxis forecastFrom={FORECAST_START} delta={c.delta} color={c.color} wide onExpand={() => openModal({ label: `${c.label} (IMF)`, value: c.cur ? c.fmt(c.cur.value ?? 0) : '-', unit: `${c.unit}, solid = actual · dashed = forecast`, data: c.d, color: c.color, icon: c.icon, forecastFrom: FORECAST_START })} />
                 ))}
               </div>
             </article>
@@ -775,12 +949,35 @@ export default function EconomyPage() {
                   </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem' }}>
-                  <div style={{ display: 'flex', background: 'var(--bg-sunken)', borderRadius: '8px', padding: '3px' }}>
-                    {(['area', 'line', 'bar'] as const).map(t => (
-                      <button key={t} onClick={() => setChartType(t)} style={{ padding: '.3rem .65rem', borderRadius: '6px', fontSize: '.65rem', fontWeight: 600, border: 'none', cursor: 'pointer', background: chartType === t ? 'var(--bg-elevated)' : 'transparent', color: chartType === t ? 'var(--text)' : 'var(--text-tertiary)', boxShadow: chartType === t ? 'var(--shadow-sm)' : 'none', textTransform: 'capitalize', transition: 'all .15s' }}>
-                        {t}
-                      </button>
-                    ))}
+                  <div ref={exportMenuRef} style={{ position: 'relative' }}>
+                    <button type="button" aria-label="Share and export" aria-controls="economy-export-menu" aria-expanded={exportMenuOpen} title="Share and export" onClick={e => { e.stopPropagation(); setExportMenuOpen(value => !value) }} style={{ display: 'inline-flex', alignItems: 'center', gap: '.35rem', padding: '.5rem .65rem', border: '1px solid var(--border)', borderRadius: '9px', background: 'var(--bg-elevated)', color: 'var(--text-secondary)', fontSize: '.7rem', fontWeight: 650, cursor: 'pointer' }}>
+                      <Share2 size={15} /> <span>Share</span>
+                    </button>
+                    {exportMenuOpen && (
+                      <div id="economy-export-menu" role="group" aria-label="Share and export options" style={{ position: 'absolute', top: 'calc(100% + .45rem)', right: 0, zIndex: 5, width: 250, padding: '.45rem', border: '1px solid var(--border)', borderRadius: '12px', background: 'var(--bg-elevated)', boxShadow: 'var(--shadow-lg)' }}>
+                        <div style={{ padding: '.5rem .55rem .6rem', borderBottom: '1px solid var(--border-light)', marginBottom: '.25rem' }}>
+                          <strong style={{ display: 'block', fontSize: '.72rem', color: 'var(--text)' }}>Share & export</strong>
+                          <span style={{ display: 'block', marginTop: '.12rem', fontSize: '.6rem', color: 'var(--text-tertiary)' }}>{modalShown.length} observations · {modalShown[0]?.year ?? '—'}–{modalShown[modalShown.length - 1]?.year ?? '—'}</span>
+                        </div>
+                        <button className="eco-export-item" type="button" onClick={() => { downloadCsv(); setExportMenuOpen(false) }} style={{ display: 'flex', width: '100%', alignItems: 'center', gap: '.55rem', padding: '.55rem', border: 0, borderRadius: '7px', color: 'var(--text)', textAlign: 'left', fontSize: '.68rem', cursor: 'pointer' }}>
+                          <Download size={14} style={{ color: 'var(--primary)' }} /> {viewMode === 'table' ? 'Download table (CSV)' : 'Download data (CSV)'}
+                        </button>
+                        {viewMode === 'chart' && <>
+                          <button className="eco-export-item" type="button" onClick={() => { void exportChart('png'); setExportMenuOpen(false) }} style={{ display: 'flex', width: '100%', alignItems: 'center', gap: '.55rem', padding: '.55rem', border: 0, borderRadius: '7px', color: 'var(--text)', textAlign: 'left', fontSize: '.68rem', cursor: 'pointer' }}>
+                            <Image size={14} style={{ color: 'var(--primary)' }} /> Export chart as PNG
+                          </button>
+                          <button className="eco-export-item" type="button" onClick={() => { void exportChart('svg'); setExportMenuOpen(false) }} style={{ display: 'flex', width: '100%', alignItems: 'center', gap: '.55rem', padding: '.55rem', border: 0, borderRadius: '7px', color: 'var(--text)', textAlign: 'left', fontSize: '.68rem', cursor: 'pointer' }}>
+                            <Image size={14} style={{ color: 'var(--primary)' }} /> Export chart as SVG
+                          </button>
+                        </>}
+                        <button className="eco-export-item" type="button" onClick={() => void copyCitation()} style={{ display: 'flex', width: '100%', alignItems: 'center', gap: '.55rem', padding: '.55rem', border: 0, borderRadius: '7px', color: 'var(--text)', textAlign: 'left', fontSize: '.68rem', cursor: 'pointer' }}>
+                          {citationCopied ? <Check size={14} style={{ color: 'var(--primary)' }} /> : <Copy size={14} style={{ color: 'var(--primary)' }} />} {citationCopied ? 'Citation copied' : 'Copy citation'}
+                        </button>
+                        <div style={{ margin: '.25rem .55rem .35rem', paddingTop: '.45rem', borderTop: '1px solid var(--border-light)', fontSize: '.58rem', color: 'var(--text-tertiary)', lineHeight: 1.45 }}>
+                          Source: <a href={modalSourceUrl} target="_blank" rel="noreferrer" style={{ color: 'var(--primary)', fontWeight: 600 }}>{modalSource}</a>
+                        </div>
+                      </div>
+                    )}
                   </div>
                   <button onClick={() => setModal(null)} style={{ background: 'var(--bg-sunken)', border: 'none', borderRadius: '8px', width: 32, height: 32, display: 'grid', placeItems: 'center', cursor: 'pointer', color: 'var(--text-secondary)' }}>
                     <X size={16} />
@@ -788,9 +985,9 @@ export default function EconomyPage() {
                 </div>
               </div>
               <div style={{ padding: '1.5rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '.5rem', marginBottom: '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '.65rem', marginBottom: '1rem' }}>
                   <span style={{ fontSize: '.6rem', color: 'var(--text-tertiary)' }}>
-                    {modalShown.length > 1 ? `${modalShown[0].year}–${modalShown[modalShown.length - 1].year} · hover for change vs start` : 'No data in range'}
+                    {modalShown.length > 1 ? `${modalShown[0].year}–${modalShown[modalShown.length - 1].year} · ${modalShown.length} observations` : 'No data in range'}
                     {modalHasActual && modalHasForecast ? ` · solid = actual, dashed = forecast from ${modal.forecastFrom}` : modalHasForecast ? ' · all forecast' : ''}
                   </span>
                   <div style={{ display: 'flex', background: 'var(--bg-sunken)', borderRadius: '8px', padding: '3px' }}>
@@ -799,14 +996,64 @@ export default function EconomyPage() {
                         {o.label}
                       </button>
                     ))}
+                    <button onClick={() => setTimeRange('custom')} style={{ padding: '.3rem .6rem', borderRadius: '6px', fontSize: '.62rem', fontWeight: 700, border: 'none', cursor: 'pointer', background: timeRange === 'custom' ? 'var(--bg-elevated)' : 'transparent', color: timeRange === 'custom' ? 'var(--text)' : 'var(--text-tertiary)', boxShadow: timeRange === 'custom' ? 'var(--shadow-sm)' : 'none' }}>
+                      Custom
+                    </button>
                   </div>
                 </div>
-                {chartType === 'bar' ? (
-                  <BarChart data={modalShown} height={320} color={modal.color} showDelta yAxis forecastFrom={modal.forecastFrom} formatValue={modalFmt(modal)} />
-                ) : (
-                  <LineChart data={modalShown} color={modal.color} height={320} showArea={chartType === 'area'} showDelta yAxis forecastFrom={modal.forecastFrom} formatValue={modalFmt(modal)} />
+                {timeRange === 'custom' && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '.55rem', flexWrap: 'wrap', marginBottom: '.8rem', fontSize: '.68rem', color: 'var(--text-secondary)' }}>
+                    <label>From <select aria-label="Start year" value={customStart} onChange={e => setCustomStart(e.target.value)} style={{ marginLeft: '.25rem', padding: '.35rem .5rem', borderRadius: '7px', border: '1px solid var(--border)', background: 'var(--bg-elevated)', color: 'var(--text)' }}>{modalYears.map(year => <option key={year} value={year}>{year}</option>)}</select></label>
+                    <label>To <select aria-label="End year" value={customEnd} onChange={e => setCustomEnd(e.target.value)} style={{ marginLeft: '.25rem', padding: '.35rem .5rem', borderRadius: '7px', border: '1px solid var(--border)', background: 'var(--bg-elevated)', color: 'var(--text)' }}>{modalYears.map(year => <option key={year} value={year}>{year}</option>)}</select></label>
+                    <span>{modalShown.length} observations selected</span>
+                  </div>
                 )}
-                {(modalHasActual || modalHasForecast) && (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '.65rem', flexWrap: 'wrap', marginBottom: '.75rem' }}>
+                  <div aria-label="Data view" style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', padding: '3px', border: '1px solid var(--border-light)', borderRadius: '9px', background: 'var(--bg-sunken)' }}>
+                    <button type="button" aria-pressed={viewMode === 'chart'} onClick={() => setViewMode('chart')} style={{ display: 'inline-flex', alignItems: 'center', gap: '.35rem', padding: '.42rem .7rem', border: 0, borderRadius: '6px', background: viewMode === 'chart' ? 'var(--bg-elevated)' : 'transparent', color: viewMode === 'chart' ? 'var(--text)' : 'var(--text-secondary)', boxShadow: viewMode === 'chart' ? 'var(--shadow-sm)' : 'none', fontSize: '.66rem', fontWeight: 650, cursor: 'pointer' }}>
+                      <Image size={13} /> Chart
+                    </button>
+                    <button type="button" aria-pressed={viewMode === 'table'} onClick={() => setViewMode('table')} style={{ display: 'inline-flex', alignItems: 'center', gap: '.35rem', padding: '.42rem .7rem', border: 0, borderRadius: '6px', background: viewMode === 'table' ? 'var(--bg-elevated)' : 'transparent', color: viewMode === 'table' ? 'var(--text)' : 'var(--text-secondary)', boxShadow: viewMode === 'table' ? 'var(--shadow-sm)' : 'none', fontSize: '.66rem', fontWeight: 650, cursor: 'pointer' }}>
+                      <Table2 size={13} /> Table
+                    </button>
+                  </div>
+                  {viewMode === 'chart' && <div aria-label="Chart type" style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', padding: '3px', border: '1px solid var(--border-light)', borderRadius: '9px', background: 'var(--bg-sunken)' }}>
+                    {(['area', 'line', 'bar'] as const).map(t => (
+                      <button key={t} type="button" aria-pressed={chartType === t} onClick={() => setChartType(t)} style={{ padding: '.38rem .65rem', borderRadius: '6px', fontSize: '.62rem', fontWeight: 650, border: 'none', cursor: 'pointer', background: chartType === t ? 'var(--bg-elevated)' : 'transparent', color: chartType === t ? 'var(--text)' : 'var(--text-secondary)', boxShadow: chartType === t ? 'var(--shadow-sm)' : 'none', textTransform: 'capitalize' }}>
+                        {t}
+                      </button>
+                    ))}
+                  </div>}
+                </div>
+                <p style={{ margin: '0 0 .8rem', fontSize: '.62rem', color: 'var(--text-tertiary)', lineHeight: 1.5 }}>
+                  Values: {modalUnit} · Source: <a href={modalSourceUrl} target="_blank" rel="noreferrer" style={{ color: 'var(--primary)', fontWeight: 600 }}>{modalSource}</a> · Use Share to export or cite this series.
+                </p>
+                {viewMode === 'chart' ? <div ref={chartRef}>
+                  {chartType === 'bar' ? (
+                    <BarChart data={modalShown} height={320} color={modal.color} showDelta yAxis forecastFrom={modal.forecastFrom} formatValue={modalFmt(modal)} />
+                  ) : (
+                    <LineChart data={modalShown} color={modal.color} height={320} showArea={chartType === 'area'} showDelta yAxis forecastFrom={modal.forecastFrom} formatValue={modalFmt(modal)} />
+                  )}
+                </div> : (
+                  <div style={{ overflowX: 'auto', marginTop: '1rem', border: '1px solid var(--border-light)', borderRadius: '10px' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '.72rem', textAlign: 'left' }}>
+                      <caption style={{ padding: '.65rem .75rem', color: 'var(--text-secondary)', textAlign: 'left' }}>Underlying values for the selected years · {modalUnit}</caption>
+                      <thead><tr style={{ background: 'var(--bg-sunken)', color: 'var(--text-secondary)' }}>
+                        <th scope="col" style={{ padding: '.55rem .75rem' }}>Year</th>
+                        <th scope="col" style={{ padding: '.55rem .75rem' }}>Value ({modalUnit})</th>
+                        <th scope="col" style={{ padding: '.55rem .75rem' }}>Series type</th>
+                      </tr></thead>
+                      <tbody>{modalShown.map(point => (
+                        <tr key={point.year} style={{ borderTop: '1px solid var(--border-light)' }}>
+                          <td style={{ padding: '.5rem .75rem', fontVariantNumeric: 'tabular-nums' }}>{point.year}</td>
+                          <td style={{ padding: '.5rem .75rem', fontVariantNumeric: 'tabular-nums' }}>{point.value}</td>
+                          <td style={{ padding: '.5rem .75rem', color: modal.forecastFrom && Number(point.year) >= modal.forecastFrom ? 'var(--warning)' : 'var(--text-secondary)' }}>{modal.forecastFrom && Number(point.year) >= modal.forecastFrom ? 'Forecast' : 'Actual'}</td>
+                        </tr>
+                      ))}</tbody>
+                    </table>
+                  </div>
+                )}
+                {viewMode === 'chart' && (modalHasActual || modalHasForecast) && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '.6rem', fontSize: '.6rem', color: 'var(--text-secondary)' }}>
                     {modalHasActual && (
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: '.35rem' }}>

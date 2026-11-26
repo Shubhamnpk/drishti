@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ArrowLeft, ArrowRight, ExternalLink, FileText, Check, Clock, AlertTriangle, HelpCircle, MapPin, Megaphone, Bell } from 'lucide-react'
-import { projects, slugify, findProjectBySlug, parseBudgetCr, utilizationPct, PROJECT_FX_NOTE, PROJECT_FX_SOURCE } from '@/lib/data'
+import { projects, slugify, findProjectBySlug, parseBudgetCr, utilizationPct, projectProgressLabel, PROJECT_FX_NOTE, PROJECT_FX_SOURCE } from '@/lib/data'
 import { StatusBadge } from '@/components/shared'
 import { RelatedDatasets } from '@/components/related-datasets'
 import { ProjectGallery } from '@/components/project-gallery'
@@ -70,7 +70,7 @@ function getTimeline(project: import('@/lib/types').Project): ProjectUpdate[] {
   return [
     {
       date: project.updated,
-      title: `${project.progress}% - ${project.status}`,
+      title: `${projectProgressLabel(project)} - ${project.status}`,
       text: `${project.category} · ${project.ministry}. Budget ${formatNprText(project.budget)}, spent ${formatNprText(project.spent)}. Target ${formatNprText(project.target)}. Source: ${project.source}.`,
       type: type as ProjectUpdate['type'],
     },
@@ -193,7 +193,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
                 }}
               >
                 <span className="rounded-full bg-white" style={{ width: 6, height: 6, display: 'inline-block' }} />
-                {project.status} · {project.progress}%
+                {project.status} · {projectProgressLabel(project)}
               </span>
             </div>
             <h1
@@ -223,7 +223,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
               { label: 'Spent', value: formatNprText(project.spent), extra: utilizationPct(project.spent, project.budget) != null ? `${utilizationPct(project.spent, project.budget)}% utilized` : parseBudgetCr(project.spent) != null ? formatNpr(parseBudgetCr(project.spent)! * 1e7) : null, note: project.spentNote },
               { label: 'Target', value: formatNprText(project.target), extra: null },
               { label: 'Updated', value: project.updated, extra: null },
-              { label: 'Progress', value: `${project.progress}%`, extra: null },
+              { label: 'Progress', value: projectProgressLabel(project), extra: null },
             ].map(s => (
               <div key={s.label} className="bg-sunken rounded-[10px]" style={{ padding: '.75rem .85rem' }}>
                 <span className="text-tertiary" style={{ fontSize: '.6rem', letterSpacing: '.08em', textTransform: 'uppercase', fontWeight: 700 }}>{s.label}</span>
@@ -236,7 +236,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
           <div>
             <div className="text-tertiary" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '.66rem', marginBottom: '.3rem' }}>
               <span>Physical progress</span>
-              <strong className="text-ink" style={{ fontSize: '.78rem' }}>{project.progress}%</strong>
+              <strong className="text-ink" style={{ fontSize: '.78rem' }}>{projectProgressLabel(project)}</strong>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '.45rem' }}>
               <StatusBadge status={project.status} />

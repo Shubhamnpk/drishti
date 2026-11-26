@@ -1,0 +1,695 @@
+[
+ {
+  "slug": "achham",
+  "name": "Achham",
+  "hq": "MANGALSEN",
+  "provinceNum": 7,
+  "area": 1700.12945757,
+  "units": 10,
+  "population": 227725
+ },
+ {
+  "slug": "arghakhanchi",
+  "name": "Arghakhanchi",
+  "hq": "SANDHIKHARKA",
+  "provinceNum": 5,
+  "area": 1239.08214273,
+  "units": 6,
+  "population": 176427
+ },
+ {
+  "slug": "baglung",
+  "name": "Baglung",
+  "hq": "BAGLUNG",
+  "provinceNum": 4,
+  "area": 1835.86937735,
+  "units": 10,
+  "population": 247130
+ },
+ {
+  "slug": "baitadi",
+  "name": "Baitadi",
+  "hq": "DASHARATHCHAND",
+  "provinceNum": 7,
+  "area": 1492.54812776,
+  "units": 10,
+  "population": 241425
+ },
+ {
+  "slug": "bajhang",
+  "name": "Bajhang",
+  "hq": "JAYAPRITHVI",
+  "provinceNum": 7,
+  "area": 3458.64162931,
+  "units": 12,
+  "population": 188729
+ },
+ {
+  "slug": "bajura",
+  "name": "Bajura",
+  "hq": "MARTADI",
+  "provinceNum": 7,
+  "area": 2297.66440848,
+  "units": 9,
+  "population": 137732
+ },
+ {
+  "slug": "banke",
+  "name": "Banke",
+  "hq": "NEPALGANJ",
+  "provinceNum": 5,
+  "area": 1880.54113257,
+  "units": 8,
+  "population": 597299
+ },
+ {
+  "slug": "bara",
+  "name": "Bara",
+  "hq": "KALAIYA",
+  "provinceNum": 2,
+  "area": 1272.52708555,
+  "units": 16,
+  "population": 761256
+ },
+ {
+  "slug": "bardiya",
+  "name": "Bardiya",
+  "hq": "GULARIYA",
+  "provinceNum": 5,
+  "area": 2000.73793597,
+  "units": 8,
+  "population": 457612
+ },
+ {
+  "slug": "bhaktapur",
+  "name": "Bhaktapur",
+  "hq": "BHAKTAPUR",
+  "provinceNum": 3,
+  "area": 123.07150536,
+  "units": 4,
+  "population": 427060
+ },
+ {
+  "slug": "bhojpur",
+  "name": "Bhojpur",
+  "hq": "BHOJPUR",
+  "provinceNum": 1,
+  "area": 1523.58864372,
+  "units": 9,
+  "population": 156611
+ },
+ {
+  "slug": "chitwan",
+  "name": "Chitwan",
+  "hq": "BHARATPUR",
+  "provinceNum": 3,
+  "area": null,
+  "units": 7,
+  "population": 711277
+ },
+ {
+  "slug": "dadeldhura",
+  "name": "Dadeldhura",
+  "hq": "AMARGADHI",
+  "provinceNum": 7,
+  "area": 1502.08945644,
+  "units": 7,
+  "population": 138538
+ },
+ {
+  "slug": "dailekh",
+  "name": "Dailekh",
+  "hq": "NARAYAN",
+  "provinceNum": 6,
+  "area": 1483.99936271,
+  "units": 11,
+  "population": 251647
+ },
+ {
+  "slug": "dang",
+  "name": "Dang",
+  "hq": "TRIBHUWANNAGAR",
+  "provinceNum": 5,
+  "area": 3058.53850742,
+  "units": 10,
+  "population": 670352
+ },
+ {
+  "slug": "darchula",
+  "name": "Darchula",
+  "hq": "DARCHULA",
+  "provinceNum": 7,
+  "area": 2339.60543398,
+  "units": 9,
+  "population": 132226
+ },
+ {
+  "slug": "dhading",
+  "name": "Dhading",
+  "hq": "NILKANTHA",
+  "provinceNum": 3,
+  "area": 1906.70686297,
+  "units": 13,
+  "population": 323704
+ },
+ {
+  "slug": "dhankuta",
+  "name": "Dhankuta",
+  "hq": "DHANKUTA",
+  "provinceNum": 1,
+  "area": 898.71012994,
+  "units": 7,
+  "population": 148730
+ },
+ {
+  "slug": "dhanusa",
+  "name": "Dhanusa",
+  "hq": "JANAKPUR",
+  "provinceNum": 2,
+  "area": 1188.70295575,
+  "units": 18,
+  "population": 865032
+ },
+ {
+  "slug": "dolakha",
+  "name": "Dolakha",
+  "hq": "BHIMESHWAR",
+  "provinceNum": 3,
+  "area": 2146.65536353,
+  "units": 9,
+  "population": 171278
+ },
+ {
+  "slug": "dolpa",
+  "name": "Dolpa",
+  "hq": "DUNAI",
+  "provinceNum": 6,
+  "area": 7944.65893556,
+  "units": 8,
+  "population": 42164
+ },
+ {
+  "slug": "doti",
+  "name": "Doti",
+  "hq": "DIPAYAL SILGADHI",
+  "provinceNum": 7,
+  "area": 2050.40364742,
+  "units": 9,
+  "population": 201778
+ },
+ {
+  "slug": "gorkha",
+  "name": "Gorkha",
+  "hq": "GORKHA",
+  "provinceNum": 4,
+  "area": 3646.07574366,
+  "units": 11,
+  "population": 248287
+ },
+ {
+  "slug": "gulmi",
+  "name": "Gulmi",
+  "hq": "RESUNGA",
+  "provinceNum": 5,
+  "area": 1107.86200109,
+  "units": 12,
+  "population": 245874
+ },
+ {
+  "slug": "humla",
+  "name": "Humla",
+  "hq": "SIMIKOT",
+  "provinceNum": 6,
+  "area": 6007.32008311,
+  "units": 7,
+  "population": 53884
+ },
+ {
+  "slug": "ilam",
+  "name": "Ilam",
+  "hq": "ILAM",
+  "provinceNum": 1,
+  "area": 1685.28288314,
+  "units": 10,
+  "population": 278128
+ },
+ {
+  "slug": "jajarkot",
+  "name": "Jajarkot",
+  "hq": "KHALANGA",
+  "provinceNum": 6,
+  "area": 2222.06385926,
+  "units": 7,
+  "population": 188301
+ },
+ {
+  "slug": "jhapa",
+  "name": "Jhapa",
+  "hq": "BHADRAPUR",
+  "provinceNum": 1,
+  "area": 1603.81095109,
+  "units": 15,
+  "population": 992796
+ },
+ {
+  "slug": "jumla",
+  "name": "Jumla",
+  "hq": "CHANDANNATH",
+  "provinceNum": 6,
+  "area": 2553.79322616,
+  "units": 8,
+  "population": 117268
+ },
+ {
+  "slug": "kailali",
+  "name": "Kailali",
+  "hq": "DHANGADHI",
+  "provinceNum": 7,
+  "area": 3285.49238754,
+  "units": 13,
+  "population": 899558
+ },
+ {
+  "slug": "kalikot",
+  "name": "Kalikot",
+  "hq": "MANMA",
+  "provinceNum": 6,
+  "area": 1639.71354015,
+  "units": 9,
+  "population": 144828
+ },
+ {
+  "slug": "kanchanpur",
+  "name": "Kanchanpur",
+  "hq": "BHIMDATTA",
+  "provinceNum": 7,
+  "area": 1617.64471672,
+  "units": 9,
+  "population": 511026
+ },
+ {
+  "slug": "kapilbastu",
+  "name": "Kapilbastu",
+  "hq": null,
+  "provinceNum": null,
+  "area": 1651.09640982,
+  "units": 10,
+  "population": 678685
+ },
+ {
+  "slug": "kaski",
+  "name": "Kaski",
+  "hq": "POKHARA",
+  "provinceNum": 4,
+  "area": 2084.81079438,
+  "units": 5,
+  "population": 589534
+ },
+ {
+  "slug": "kathmandu",
+  "name": "Kathmandu",
+  "hq": "KATHMANDU",
+  "provinceNum": 3,
+  "area": 413.51345306,
+  "units": 11,
+  "population": 1994555
+ },
+ {
+  "slug": "kavrepalanchok",
+  "name": "Kavrepalanchok",
+  "hq": null,
+  "provinceNum": null,
+  "area": 1393.82909514,
+  "units": 13,
+  "population": 358722
+ },
+ {
+  "slug": "khotang",
+  "name": "Khotang",
+  "hq": "DIKTEL",
+  "provinceNum": 1,
+  "area": 1589.19505702,
+  "units": 10,
+  "population": 173920
+ },
+ {
+  "slug": "lalitpur",
+  "name": "Lalitpur",
+  "hq": "LALITPUR",
+  "provinceNum": 3,
+  "area": 396.74388208,
+  "units": 6,
+  "population": 543311
+ },
+ {
+  "slug": "lamjung",
+  "name": "Lamjung",
+  "hq": "BESISAHAR",
+  "provinceNum": 4,
+  "area": 1662.66991816,
+  "units": 8,
+  "population": 154330
+ },
+ {
+  "slug": "mahottari",
+  "name": "Mahottari",
+  "hq": "JALESHWAR",
+  "provinceNum": 2,
+  "area": 1000.7595921,
+  "units": 15,
+  "population": 705912
+ },
+ {
+  "slug": "makwanpur",
+  "name": "Makwanpur",
+  "hq": "HETAUDA",
+  "provinceNum": 3,
+  "area": 2443.44979571,
+  "units": 10,
+  "population": 458494
+ },
+ {
+  "slug": "manang",
+  "name": "Manang",
+  "hq": "CHAME",
+  "provinceNum": 4,
+  "area": 2321.05334089,
+  "units": 4,
+  "population": 4938
+ },
+ {
+  "slug": "morang",
+  "name": "Morang",
+  "hq": "BIRATNAGAR",
+  "provinceNum": 1,
+  "area": 1822.3403614,
+  "units": 17,
+  "population": 1141971
+ },
+ {
+  "slug": "mugu",
+  "name": "Mugu",
+  "hq": "GAMGHADI",
+  "provinceNum": 6,
+  "area": 3233.13262037,
+  "units": 4,
+  "population": 63858
+ },
+ {
+  "slug": "mustang",
+  "name": "Mustang",
+  "hq": "JOMSOM",
+  "provinceNum": 4,
+  "area": 3564.13326615,
+  "units": 5,
+  "population": 11326
+ },
+ {
+  "slug": "myagdi",
+  "name": "Myagdi",
+  "hq": "BENI",
+  "provinceNum": 4,
+  "area": 2285.10052659,
+  "units": 6,
+  "population": 104770
+ },
+ {
+  "slug": "nawalparasi-east",
+  "name": "Nawalparasi East",
+  "hq": null,
+  "provinceNum": null,
+  "area": 1426.11811196,
+  "units": 8,
+  "population": 376192
+ },
+ {
+  "slug": "nawalparasi-west",
+  "name": "Nawalparasi West",
+  "hq": null,
+  "provinceNum": null,
+  "area": 726.25178648,
+  "units": 7,
+  "population": 383750
+ },
+ {
+  "slug": "nuwakot",
+  "name": "Nuwakot",
+  "hq": "BIDUR",
+  "provinceNum": 3,
+  "area": 1192.97548759,
+  "units": 12,
+  "population": 260648
+ },
+ {
+  "slug": "okhaldhunga",
+  "name": "Okhaldhunga",
+  "hq": "SIDDHICHARAN",
+  "provinceNum": 1,
+  "area": 1076.07920143,
+  "units": 8,
+  "population": 138989
+ },
+ {
+  "slug": "palpa",
+  "name": "Palpa",
+  "hq": "TANSEN",
+  "provinceNum": 5,
+  "area": 1462.14342345,
+  "units": 10,
+  "population": 241951
+ },
+ {
+  "slug": "panchthar",
+  "name": "Panchthar",
+  "hq": "PHIDIM",
+  "provinceNum": 1,
+  "area": 1247.72251232,
+  "units": 8,
+  "population": 171047
+ },
+ {
+  "slug": "parbat",
+  "name": "Parbat",
+  "hq": "KUSMA",
+  "provinceNum": 4,
+  "area": 541.65594257,
+  "units": 7,
+  "population": 130151
+ },
+ {
+  "slug": "parsa",
+  "name": "Parsa",
+  "hq": "BIRGANJ",
+  "provinceNum": 2,
+  "area": 1406.56421558,
+  "units": 14,
+  "population": 651290
+ },
+ {
+  "slug": "pyuthan",
+  "name": "Pyuthan",
+  "hq": "PYUTHAN",
+  "provinceNum": 5,
+  "area": 1320.77347844,
+  "units": 9,
+  "population": 230679
+ },
+ {
+  "slug": "ramechhap",
+  "name": "Ramechhap",
+  "hq": "MANTHALI",
+  "provinceNum": 3,
+  "area": 1564.05299002,
+  "units": 8,
+  "population": 169035
+ },
+ {
+  "slug": "rasuwa",
+  "name": "Rasuwa",
+  "hq": "DHUNCHE",
+  "provinceNum": 3,
+  "area": 1500.81681924,
+  "units": 5,
+  "population": 45475
+ },
+ {
+  "slug": "rautahat",
+  "name": "Rautahat",
+  "hq": "GAUR",
+  "provinceNum": 2,
+  "area": 1038.2189733,
+  "units": 18,
+  "population": 813269
+ },
+ {
+  "slug": "rolpa",
+  "name": "Rolpa",
+  "hq": "LIWANG",
+  "provinceNum": 5,
+  "area": 1885.00965996,
+  "units": 10,
+  "population": 233343
+ },
+ {
+  "slug": "rukum-east",
+  "name": "Rukum East",
+  "hq": null,
+  "provinceNum": null,
+  "area": 1682.02264305,
+  "units": 3,
+  "population": 56671
+ },
+ {
+  "slug": "rukum-west",
+  "name": "Rukum West",
+  "hq": null,
+  "provinceNum": null,
+  "area": 1213.06320377,
+  "units": 6,
+  "population": 165460
+ },
+ {
+  "slug": "rupandehi",
+  "name": "Rupandehi",
+  "hq": "SIDDHARTHANAGAR",
+  "provinceNum": 5,
+  "area": 1304.6323645,
+  "units": 16,
+  "population": 1112589
+ },
+ {
+  "slug": "salyan",
+  "name": "Salyan",
+  "hq": "SALYAN",
+  "provinceNum": 6,
+  "area": 1879.96157723,
+  "units": 10,
+  "population": 237387
+ },
+ {
+  "slug": "sankhuwasabha",
+  "name": "Sankhuwasabha",
+  "hq": "KHANDBARI",
+  "provinceNum": 1,
+  "area": 3469.61388214,
+  "units": 10,
+  "population": 154743
+ },
+ {
+  "slug": "saptari",
+  "name": "Saptari",
+  "hq": "RAJBIRAJ",
+  "provinceNum": 2,
+  "area": 1281.32414121,
+  "units": 18,
+  "population": 704359
+ },
+ {
+  "slug": "sarlahi",
+  "name": "Sarlahi",
+  "hq": "MALANGWA",
+  "provinceNum": 2,
+  "area": 1263.4338645,
+  "units": 20,
+  "population": 860251
+ },
+ {
+  "slug": "sindhuli",
+  "name": "Sindhuli",
+  "hq": "KAMALAMAI",
+  "provinceNum": 3,
+  "area": 2484.23619665,
+  "units": 9,
+  "population": 297099
+ },
+ {
+  "slug": "sindhupalchok",
+  "name": "Sindhupalchok",
+  "hq": "CHAUTARA",
+  "provinceNum": 3,
+  "area": 2490.83730973,
+  "units": 12,
+  "population": 260345
+ },
+ {
+  "slug": "siraha",
+  "name": "Siraha",
+  "hq": "SIRAHA",
+  "provinceNum": 2,
+  "area": 1139.28374465,
+  "units": 17,
+  "population": 739328
+ },
+ {
+  "slug": "solukhumbu",
+  "name": "Solukhumbu",
+  "hq": "DUDHKUNDA",
+  "provinceNum": 1,
+  "area": 3354.14215115,
+  "units": 8,
+  "population": 102987
+ },
+ {
+  "slug": "sunsari",
+  "name": "Sunsari",
+  "hq": "INARUWA",
+  "provinceNum": 1,
+  "area": 1191.88652736,
+  "units": 12,
+  "population": 921246
+ },
+ {
+  "slug": "surkhet",
+  "name": "Surkhet",
+  "hq": "BIRENDRANAGAR",
+  "provinceNum": 6,
+  "area": 2485.60536694,
+  "units": 9,
+  "population": 410407
+ },
+ {
+  "slug": "syangja",
+  "name": "Syangja",
+  "hq": "PUTALIBAZAR",
+  "provinceNum": 4,
+  "area": 1037.68556039,
+  "units": 11,
+  "population": 252064
+ },
+ {
+  "slug": "tanahu",
+  "name": "Tanahu",
+  "hq": "BYAS",
+  "provinceNum": 4,
+  "area": 1572.14449339,
+  "units": 10,
+  "population": 317799
+ },
+ {
+  "slug": "taplejung",
+  "name": "Taplejung",
+  "hq": "TAPLEJUNG",
+  "provinceNum": 1,
+  "area": 3631.8133091,
+  "units": 9,
+  "population": 119450
+ },
+ {
+  "slug": "terhathum",
+  "name": "Terhathum",
+  "hq": null,
+  "provinceNum": null,
+  "area": 670.49210401,
+  "units": 6,
+  "population": 88279
+ },
+ {
+  "slug": "udayapur",
+  "name": "Udayapur",
+  "hq": "TRIYUGA",
+  "provinceNum": 1,
+  "area": 2296.77064563,
+  "units": 8,
+  "population": 339189
+ }
+]

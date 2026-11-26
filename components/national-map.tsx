@@ -10,7 +10,7 @@ import {
 } from 'lucide-react'
 import { MapContainer, TileLayer, GeoJSON, CircleMarker, Marker, Popup, Tooltip, Pane, useMap } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
-import { projects, slugify } from '@/lib/data'
+import { projects, projectProgressLabel, slugify } from '@/lib/data'
 import { projectSite } from '@/lib/project-coords'
 import { forecastDayLabel, isNptDay, isDayBySun, shortClock } from '@/lib/time'
 import { formatNpr, formatNprText } from '@/lib/currency'
@@ -1925,7 +1925,7 @@ export function NationalMap() {
     if (!Number.isFinite(lat) || !Number.isFinite(lng)) return
     atlasPoints.push({ type: 'Feature', id: `${kind}-${id}`, geometry: { type: 'Point', coordinates: [lng, lat] }, properties: { kind, itemId: String(id), label: name, color, size } })
   }
-  if (layers.projects) for (const x of visibleProjects) addPoint('project', x.p.name, `${x.p.name} · ${x.p.status} · ${x.p.progress}%`, x.lat as number, x.lon as number, STATUS_COLOR[x.p.status] ?? '#0d7c5f', 5.5)
+  if (layers.projects) for (const x of visibleProjects) addPoint('project', x.p.name, `${x.p.name} · ${x.p.status} · ${projectProgressLabel(x.p)}`, x.lat as number, x.lon as number, STATUS_COLOR[x.p.status] ?? '#0d7c5f', 5.5)
   if (layers.hydro) for (const h of visibleHydro) addPoint('hydro', h.name, `${h.name} · ${h.mw} MW · ${h.licenseType}`, h.lat, h.lng, HYDRO_KIND_COLOR[hydroKind(h.licenseType)], Math.min(9, 4 + Math.log2(Math.max(1, h.mw))))
   if (layers.quakes) for (const q of yearQuakes) addPoint('quake', q.id, `M${q.mag.toFixed(1)} · ${q.place}`, q.coordinates[1], q.coordinates[0], q.mag >= 4.5 ? '#dc2626' : '#f59e0b', 4 + Math.min(5, q.mag))
   if (layers.quakesPast) for (const q of pastQuakes) addPoint('quake', q.id, `Past · M${q.mag.toFixed(1)} · ${q.place}`, q.coordinates[1], q.coordinates[0], '#b45309', 4 + Math.min(4, q.mag))
@@ -2162,11 +2162,11 @@ export function NationalMap() {
                 dashArray: exact && confident ? undefined : '3 2',
               }}
             >
-              <Tooltip direction="top" offset={[0, -8]}>{p.name} · {p.progress}%</Tooltip>
+              <Tooltip direction="top" offset={[0, -8]}>{p.name} · {projectProgressLabel(p)}</Tooltip>
               <Popup>
                 <div style={{ fontSize: '.75rem', lineHeight: 1.45 }}>
                   <strong>{p.name}</strong><br />
-                  {p.status} · {p.progress}% · {p.budget}
+                  {p.status} · {projectProgressLabel(p)} · {p.budget}
                   {exact
                     ? <><br />◎ {siteLabel}{confident ? ' · GPS verified' : ' · anchor, see registry'}</>
                     : dd ? <><br />≈ {dd} district</> : <><br />≈ {p.province} (province-level pin)</>}<br />
@@ -2303,7 +2303,7 @@ export function NationalMap() {
                 })}
                 eventHandlers={{ click: () => setRainSel(cur => (cur?.id === g.id ? null : rainStations.find(s => s.id === g.id) ?? null)) }}
               >
-                <Tooltip direction="top" offset={[0, -4]}>{g.name}{g.area ? ` · ${g.area}` : ''} — {g.mm.toFixed(1)} mm / 24 h</Tooltip>
+                <Tooltip direction="top" offset={[0, -4]}>{g.name}{g.area ? ` · ${g.area}` : ''} · {g.mm.toFixed(1)} mm / 24 h</Tooltip>
               </Marker>
             )
           })}
@@ -2574,7 +2574,7 @@ export function NationalMap() {
                       <Building2 size={13} style={{ color: STATUS_COLOR[pt.p.status] ?? 'var(--accent)', flexShrink: 0 }} />
                       <span style={{ fontSize: '.72rem', fontWeight: 600, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{pt.p.name}</span>
                     </div>
-                    <span style={{ fontSize: '.6rem', color: 'var(--text-tertiary)', flexShrink: 0 }}>{pt.p.progress}%</span>
+                    <span style={{ fontSize: '.6rem', color: 'var(--text-tertiary)', flexShrink: 0 }}>{projectProgressLabel(pt.p)}</span>
                   </button>
                 ))}
 
@@ -3084,8 +3084,8 @@ export function NationalMap() {
                   {[
                     ['Population', row.population.toLocaleString('en-US'), '#2563eb'],
                     ['Households', row.households.toLocaleString('en-US'), '#0891b2'],
-                    ['Literate · 5+', row.literacy != null ? `${row.literacy.toFixed(0)}%` : '—', '#16a34a'],
-                    ['Share of district', share != null ? `${share.toFixed(1)}%` : '—', '#7c3aed'],
+                    ['Literate · 5+', row.literacy != null ? `${row.literacy.toFixed(0)}%` : 'N/A', '#16a34a'],
+                    ['Share of district', share != null ? `${share.toFixed(1)}%` : 'N/A', '#7c3aed'],
                   ].map(([label, val, c2]) => (
                     <div key={label as string} style={{ padding: '.45rem .6rem' }} className="bg-sunken rounded-[8px]">
                       <span style={{ fontSize: '.52rem', letterSpacing: '.07em', textTransform: 'uppercase', fontWeight: 700 }} className="text-tertiary">{label}</span>
@@ -3106,7 +3106,7 @@ export function NationalMap() {
                   </div>
                 )}
                 <p className="muted" style={{ fontSize: '.58rem', margin: '.55rem 0 0' }}>
-                  Census {row.censusYear} counts as filed for this palika (NDRRMA/BIPAD){share == null ? '' : ' — the share is computed here from the district total'}.
+                  Census {row.censusYear} counts as filed for this palika (NDRRMA/BIPAD){share == null ? '' : ', with the share computed here from the district total'}.
                 </p>
               </div>
             )
@@ -3159,11 +3159,11 @@ export function NationalMap() {
           : ''
         const rows: [string, string][] = [
           ['Date', when ?? 'not given'],
-          ['Location', local || coords || '—'],
+          ['Location', local || coords || 'N/A'],
           ['Source', source ? source.replace(/_/g, ' ') : 'not given'],
           ['Verified', i.verified ? 'yes' : 'not verified'],
         ]
-        const n = (v?: number | null) => typeof v === 'number' ? v.toLocaleString('en-US') : '—'
+        const n = (v?: number | null) => typeof v === 'number' ? v.toLocaleString('en-US') : 'N/A'
         const impact: [string, string][] = loss ? [
           ['Deaths', n(loss.peopleDeathCount)],
           ['Missing', n(loss.peopleMissingCount)],
@@ -3348,9 +3348,9 @@ export function NationalMap() {
         const ended = roadWhen(r.dateRoadblockEnd)
         const eta = roadWhen(r.dateRoadblockEndEstimated)
         const rows: [string, string][] = [
-          ['Location', r.location ?? '—'],
-          ['Division', r.division ?? '—'],
-          ['Chainage', r.chainage ?? '—'],
+          ['Location', r.location ?? 'N/A'],
+          ['Division', r.division ?? 'N/A'],
+          ['Chainage', r.chainage ?? 'N/A'],
           ['Blocked since', started ?? 'date not given'],
           ['Reopen ETA', r.repairEta || eta || 'not given'],
         ]
@@ -3471,10 +3471,10 @@ export function NationalMap() {
                   <p className="eyebrow" style={{ margin: '0 0 .45rem' }}>CENSUS PROFILE{prof?.censusYear ? ` · ${prof.censusYear}` : ''}</p>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '.4rem' }}>
                     {[
-                      ['Population', prof ? prof.population.toLocaleString('en-US') : '—', '#2563eb'],
-                      ['Households', prof ? prof.households.toLocaleString('en-US') : '—', '#0891b2'],
-                      ['Literate · 5+', prof?.literacy != null ? `${prof.literacy.toFixed(0)}%` : '—', '#16a34a'],
-                      ['Seismic risk', risk ? `${risk.riskScore.toFixed(1)} · #${risk.rank}` : '—', '#dc2626'],
+                      ['Population', prof ? prof.population.toLocaleString('en-US') : 'N/A', '#2563eb'],
+                      ['Households', prof ? prof.households.toLocaleString('en-US') : 'N/A', '#0891b2'],
+                      ['Literate · 5+', prof?.literacy != null ? `${prof.literacy.toFixed(0)}%` : 'N/A', '#16a34a'],
+                      ['Seismic risk', risk ? `${risk.riskScore.toFixed(1)} · #${risk.rank}` : 'N/A', '#dc2626'],
                     ].map(([label, val, c]) => (
                       <div key={label as string} style={{ padding: '.45rem .6rem' }} className="bg-sunken rounded-[8px]">
                         <span style={{ fontSize: '.52rem', letterSpacing: '.07em', textTransform: 'uppercase', fontWeight: 700 }} className="text-tertiary">{label}</span>
@@ -3566,7 +3566,7 @@ export function NationalMap() {
                 </span>
               )}
               {layers.pm25 && (
-                <span className="atlas-hq-legend-item" style={{ gap: 6 }} title="CAMS model PM2.5 on its native ~0.4° grid — a regional picture, not a street-level reading. It cannot resolve valleys, so Kathmandu's real PM2.5 runs far higher than the model shows.">
+                <span className="atlas-hq-legend-item" style={{ gap: 6 }} title="CAMS model PM2.5 on its native ~0.4° grid. This gives a regional picture, not a street-level reading. It cannot resolve valleys, so Kathmandu's real PM2.5 runs far higher than the model shows.">
                   <span style={{ width: 46, height: 6, borderRadius: 99, background: PM25_HEAT_GRADIENT }} />
                   {pm25Loading ? 'Loading PM2.5 model…' : '5 → 75+ µg/m³ · WHO bands · ~0.4° model grid, valleys not resolved'}
                 </span>
@@ -3754,10 +3754,10 @@ export function NationalMap() {
                   </span>
                   <div style={{ marginTop: '.5rem', display: 'flex', flexDirection: 'column', gap: '.3rem' }}>
                     {[
-                      ['Population', prof ? prof.population.toLocaleString('en-US') : '—'],
-                      ['Households', prof ? prof.households.toLocaleString('en-US') : '—'],
-                      ['Literate (5+)', prof?.literacy != null ? `${prof.literacy.toFixed(0)}%` : '—'],
-                      ['Seismic risk score', risk ? `${risk.riskScore.toFixed(1)} (national rank ${risk.rank})` : '—'],
+                      ['Population', prof ? prof.population.toLocaleString('en-US') : 'N/A'],
+                      ['Households', prof ? prof.households.toLocaleString('en-US') : 'N/A'],
+                      ['Literate (5+)', prof?.literacy != null ? `${prof.literacy.toFixed(0)}%` : 'N/A'],
+                      ['Seismic risk score', risk ? `${risk.riskScore.toFixed(1)} (national rank ${risk.rank})` : 'N/A'],
                     ].map(([label, val]) => (
                       <div key={label} style={{ display: 'flex', alignItems: 'baseline', gap: '.4rem', fontSize: '.68rem' }}>
                         <span style={{ flex: 1 }} className="text-secondary">{label}</span>
@@ -3767,7 +3767,7 @@ export function NationalMap() {
                   </div>
                   {prof && (
                     <p className="muted" style={{ fontSize: '.58rem', margin: '.45rem 0 0' }}>
-                      {prof.units} palika rows summed here, Census {prof.censusYear} — computed, not published. NDRRMA seismic ranking.
+                      {prof.units} palika rows summed here, Census {prof.censusYear}, computed, not published. NDRRMA seismic ranking.
                     </p>
                   )}
                 </div>
@@ -3815,7 +3815,7 @@ export function NationalMap() {
                     <div style={{ minWidth: 0, flex: 1 }}>
                       <strong style={{ fontSize: '.76rem', display: 'block', color: 'var(--text)' }}>{p.name}</strong>
                       <p style={{ margin: '2px 0 0', fontSize: '.64rem', color: 'var(--text-secondary)' }}>
-                        {p.status} · {p.progress}% · {p.budget} · {exact ? `◎ ${siteLabel}` : `≈ ${dd ?? `${p.province} province`}`}
+                        {p.status} · {projectProgressLabel(p)} · {p.budget} · {exact ? `◎ ${siteLabel}` : `≈ ${dd ?? `${p.province} province`}`}
                       </p>
                     </div>
                   </Link>

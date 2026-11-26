@@ -22,7 +22,7 @@ export const metadata: Metadata = pageMetadata({
   path: '/market',
 })
 
-export const revalidate = 3600
+export const revalidate = 300
 
 export default async function MarketPage() {
   const [stocks, summary, indices, status, topStocks, history, indexHistory, sectorMap, ipos, dividends, disclosures, brokers] = await Promise.all([

@@ -149,7 +149,14 @@ export async function fetchImfSeries(): Promise<ImfResult> {
 
   const results = await Promise.all(keys.map(async key => ({ key, ...(await sdmxSeries(IMF_WEO_INDICATORS[key])) })))
   for (const { key, pts, vintage } of results) {
-    if (pts.length) series[key] = pts
+    if (pts.length) {
+      // SDMX returns NGDPD in full USD (e.g. 45,592,590,000), while the
+      // DataMapper/DBnomics WEO series uses billions (45.59259). Keep the
+      // shared EconomyData representation in billions regardless of source.
+      series[key] = key === 'imfNominalGdp'
+        ? pts.map(point => ({ ...point, value: point.value == null ? null : point.value / 1_000_000_000 }))
+        : pts
+    }
     if (vintage && !version) version = vintage
   }
   if (Object.keys(series).length) {
