@@ -11,7 +11,7 @@ import { cdnCache } from '@/lib/cache'
 
 const MARKET_REVALIDATE_SECONDS = 300
 
-export const revalidate = MARKET_REVALIDATE_SECONDS
+export const revalidate = 300
 
 const SECTOR_LABELS: Record<string, string> = {
   'open_ended_mutual_fund': 'Open-end mutual funds',
