@@ -2,6 +2,7 @@ const EGP_API = 'https://bolpatra.gov.np/api/v1'
 
 export type EgpTender = {
   id: string
+  office_code?: string
   title: string
   office_name: string
   reference: string
@@ -119,6 +120,7 @@ export type EgpFeed = {
   tenders: EgpTender[]
   summary: EgpSummary | null
   updatedAt: string
+  complete: boolean
 }
 
 async function getJson<T>(path: string): Promise<T | null> {
@@ -140,7 +142,7 @@ export async function fetchEgpTender(id: string): Promise<EgpTenderDetail | null
   return getJson<EgpTenderDetail>(`/tenders/${encodeURIComponent(id)}`)
 }
 
-/** Fetch up to 500 of the newest live notices, plus the portal's summary. */
+/** Fetch the complete paginated live e-GP notice register and its summary. */
 export async function fetchEgpFeed(): Promise<EgpFeed> {
   const [firstPage, summary] = await Promise.all([
     getJson<TenderPage>('/tenders?ordering=newest&page=1&status=ALL&page_size=100'),
@@ -148,30 +150,42 @@ export async function fetchEgpFeed(): Promise<EgpFeed> {
   ])
 
   if (!firstPage) {
-    return { total: 0, tenders: [], summary, updatedAt: new Date().toISOString() }
+    return { total: 0, tenders: [], summary, updatedAt: new Date().toISOString(), complete: false }
   }
 
   const pages = [firstPage]
-  const pageCount = Math.min(firstPage.next ? 5 : 1, Math.ceil(firstPage.count / 100))
-  if (pageCount > 1) {
-    const remaining = await Promise.all(
-      Array.from({ length: pageCount - 1 }, (_, index) =>
-        getJson<TenderPage>(`/tenders?ordering=newest&page=${index + 2}&status=ALL&page_size=100`),
+  const pageSize = firstPage.page_size || firstPage.results.length || 100
+  const pageCount = Math.ceil(firstPage.count / pageSize)
+  let complete = true
+  for (let start = 2; start <= pageCount; start += 5) {
+    const batch = await Promise.all(
+      Array.from({ length: Math.min(5, pageCount - start + 1) }, (_, index) =>
+        getJson<TenderPage>(`/tenders?ordering=newest&page=${start + index}&status=ALL&page_size=${pageSize}`),
       ),
     )
-    pages.push(...remaining.filter((page): page is TenderPage => page !== null))
+    if (batch.some(page => page === null)) complete = false
+    pages.push(...batch.filter((page): page is TenderPage => page !== null))
   }
 
+  const tenders = pages.flatMap(page => page.results)
+  if (tenders.length < firstPage.count) complete = false
   return {
     total: firstPage.count,
-    tenders: pages.flatMap(page => page.results),
+    tenders,
     summary,
     updatedAt: new Date().toISOString(),
+    complete,
   }
 }
 
 export function egpProjectUrl(id: string) {
   return `https://bolpatra.gov.np/projects/${encodeURIComponent(id)}`
+}
+
+/** Stable, collision-resistant local profile path for an e-GP procuring office. */
+export function egpAgencySlug(name: string, officeCode?: string) {
+  const base = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+  return officeCode ? `${base}-${officeCode.toLowerCase()}` : base
 }
 
 export function egpEventUrl(path: string) {

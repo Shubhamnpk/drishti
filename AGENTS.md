@@ -10,10 +10,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 # Drishti — AGENTS.md
 
-## Commands
-- `pnpm dev` / `pnpm build` / `pnpm start` (also `npm run ...`; lockfile is `pnpm-lock.yaml`)
-- `npx tsc --noEmit` — required: `next.config.mjs` sets `typescript.ignoreBuildErrors: true` so `next build` hides type errors
-- No lint/test/format scripts or `eslint.config.*` in repo; no `README.md`
+
 
 ## Stack
 Next.js 16.3.3 App Router + Turbopack, React 19, TypeScript 5.7 strict (`noEmit`, `bundler` resolution, `isolatedModules`), Tailwind v4 via `@tailwindcss/postcss` + `tw-animate-css`, shadcn `base-nova` (RSC, `lucide`), `next/font` Inter.

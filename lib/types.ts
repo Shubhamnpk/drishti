@@ -67,6 +67,15 @@ export type ProjectUpdate = {
   type: ProjectUpdateType
 }
 
+export type ProjectPhoto = {
+  src: string
+  credit: string
+  publishedAt: string
+  capturedAt?: string
+  sourceUrl: string
+  caption: string
+}
+
 export type ProjectChange = {
   date: string
   field: string
@@ -111,6 +120,7 @@ export type Project = {
   sourceUrl: string
   image: string
   gallery?: string[]
+  photos?: ProjectPhoto[]
   galleryCredit?: string
   gallerySourceUrl?: string
   changeLog?: ProjectChange[]

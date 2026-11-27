@@ -215,8 +215,8 @@ export function Header() {
             )
           })}
 
-          <Link href="/updates" className={isActive('/updates') ? 'nav-link active' : 'nav-link'} aria-current={isActive('/updates') ? 'page' : undefined} onClick={() => { setOpenMenu(null); setMobileNav(false) }}>
-            Gov News
+          <Link href="/news" className={isActive('/news') ? 'nav-link active' : 'nav-link'} aria-current={isActive('/news') ? 'page' : undefined} onClick={() => { setOpenMenu(null); setMobileNav(false) }}>
+            News
           </Link>
 
           <Link
@@ -325,8 +325,8 @@ export function Header() {
                   })}
                 </div>
               ))}
-              <Link href="/updates" className={isActive('/updates') ? 'active' : ''} onClick={() => setMobileNav(false)}>
-                <Newspaper size={17} /><span>Gov News</span>
+              <Link href="/news" className={isActive('/news') ? 'active' : ''} onClick={() => setMobileNav(false)}>
+                <Newspaper size={17} /><span>News</span>
               </Link>
               <Link href="/about" className={isActive('/about') ? 'active' : ''} onClick={() => setMobileNav(false)}>
                 <Info size={17} /><span>About</span>

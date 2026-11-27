@@ -1,6 +1,6 @@
 import type { MetadataRoute } from 'next'
 import { companies, projects, slugify } from '@/lib/data'
-import { DISTRICTS, PROVINCES } from '@/lib/geo-constants'
+import { DISTRICTS, LOCAL_UNITS, PROVINCES } from '@/lib/geo-constants'
 import { fetchNepseSectorMap } from '@/lib/nepse'
 import { SITE_URL } from '@/lib/site'
 
@@ -23,15 +23,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const core = [
     '/', '/companies', '/projects', '/economy', '/market', '/places', '/map',
-    '/procurement', '/datasets', '/sources', '/environment', '/disasters', '/calendar', '/releases', '/about',
+    '/procurement', '/datasets', '/sources', '/environment', '/disasters', '/calendar', '/releases', '/about', '/news',
   ].map((path) => entry(path, path === '/' ? 1 : 0.8, 'daily', now))
 
-  // Palikas (local units) stay out of the sitemap on purpose: at ~750 URLs the
-  // crawler walks territory nobody queries and costs real render CPU. Provinces
-  // and districts carry discovery instead.
+  // Include every local unit so search crawlers can discover the complete places directory.
   const places = [
     ...PROVINCES.map(({ slug }) => entry(`/provinces/${slug}`, 0.7, 'weekly')),
     ...DISTRICTS.map(({ slug }) => entry(`/districts/${slug}`, 0.6, 'weekly')),
+    ...LOCAL_UNITS.flatMap((unit) => {
+      const district = DISTRICTS.find((item) => item.name === unit.district)
+      return district ? [entry(`/districts/${district.slug}/${unit.slug}`, 0.5, 'monthly')] : []
+    }),
   ]
 
   const entities = [

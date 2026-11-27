@@ -11,7 +11,7 @@ import { HydroAtlas } from '@/components/hydro-atlas'
 import { projects, slugify, parseBudgetCr, utilizationPct, PROVINCES, PROJECT_FX_NOTE, PROJECT_FX_SOURCE } from '@/lib/data'
 import { matchDistricts } from '@/lib/geo'
 import { fetchWbProjectCount } from '@/lib/api'
-import { formatNprText } from '@/lib/currency'
+import { formatNpr, formatNprText } from '@/lib/currency'
 
 const NepalMapReal = dynamic(() => import('@/components/nepal-map-real').then(m => m.NepalMapReal), {
   ssr: false,
@@ -94,6 +94,8 @@ export default function ProjectsPage() {
     delayed: projects.filter(p => p.status === 'Delayed').length,
     completed: projects.filter(p => p.status === 'Completed').length,
   }
+  const valuedProjects = projects.filter(project => parseBudgetCr(project.budget) != null)
+  const totalProjectValuation = valuedProjects.reduce((total, project) => total + (parseBudgetCr(project.budget) ?? 0), 0) * 1e7
   const hasActiveFilters = Boolean(query.trim()) || statusFilter !== 'All' || catFilter !== 'All' || provinceFilter !== 'All' || districtFilter != null
 
   return (
@@ -103,8 +105,9 @@ export default function ProjectsPage() {
         <div><p className="eyebrow">PUBLIC INFRASTRUCTURE &middot; NEPAL</p><h1>National projects</h1><p className="projects-intro">Follow major public works, their reported progress, budgets and latest evidence.</p></div>
         <Link href="/map" className="projects-map-link"><Map size={16} /> Open national map <ChevronRight size={15} /></Link>
       </header>
-      <section className="projects-summary" aria-label="Portfolio summary">
+      <section className="projects-summary project-portfolio-summary" aria-label="Portfolio summary">
         <div><span>Projects tracked</span><strong>{counts.total}</strong><small>{wbCount ? '+ ' + wbCount + ' World Bank projects' : 'National portfolio'}</small></div>
+        <div><span>Total project valuation</span><strong>{formatNpr(totalProjectValuation)}</strong><small>{valuedProjects.length} projects · estimates and approved costs</small></div>
         <div><span>On track</span><strong>{counts.onTrack}</strong><small>Current status</small></div>
         <div><span>Need attention</span><strong>{counts.atRisk + counts.delayed}</strong><small>{counts.atRisk} at risk &middot; {counts.delayed} delayed</small></div>
         <div><span>Completed</span><strong>{counts.completed}</strong><small>Reported complete</small></div>

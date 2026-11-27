@@ -24,6 +24,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     title: `${company.name} financial profile`,
     description: truncate(`${getCompanyCategory(company)} · ${company.operatingStatus} · ${formatNprText(company.result)} · ${formatNprText(company.note)}`, 155),
     path: `/companies/${slug}`,
+    image: company.logo,
+    imageAlt: `${company.name} logo`,
   })
 }
 

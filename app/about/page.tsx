@@ -219,18 +219,34 @@ export default function AboutPage() {
       </section>
 
       <section id="faq" className="about-section">
-        <div className="about-section-heading">
-          <p className="eyebrow">QUESTIONS</p>
-          <h2>Straight answers</h2>
-          <p>The short version of what Drishti is, what it is not, and how to check it.</p>
-        </div>
-        <div className="about-faq">
-          {faqs.map(item => (
-            <details key={item.q}>
-              <summary>{item.q}</summary>
-              <p>{item.a}</p>
-            </details>
-          ))}
+        <div className="about-faq-split">
+          <div className="about-faq-intro">
+            <p className="eyebrow">QUESTIONS</p>
+            <h2>Questions people ask</h2>
+            <p className="about-faq-lede">The short version of what Drishti is, what it is not, and how to check it.</p>
+
+            <div className="about-faq-aside">
+              <p className="eyebrow">STILL UNANSWERED</p>
+              <strong>Send the page, not just the number.</strong>
+              <p>If a figure looks wrong, include the page, the reporting period and the document you expected it to match. Reports that cite a source are the fastest to verify.</p>
+              <a href="https://github.com/Shubhamnpk/drishti/issues" target="_blank" rel="noreferrer">
+                Open the issue tracker <ExternalLink size={12} />
+              </a>
+            </div>
+
+            <p className="about-faq-note">
+              Answers here describe how the site is built, not the underlying record. For a figure itself, always follow the publisher link on the page. The <Link href="/sources">source registry</Link> lists every endpoint.
+            </p>
+          </div>
+
+          <div className="about-faq">
+            {faqs.map((item, index) => (
+              <details key={item.q} open={index === 0}>
+                <summary>{item.q}</summary>
+                <p>{item.a}</p>
+              </details>
+            ))}
+          </div>
         </div>
       </section>
 

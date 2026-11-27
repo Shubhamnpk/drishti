@@ -3,7 +3,8 @@ import { ArrowUpRight, Database, ExternalLink, FileArchive, Radio } from 'lucide
 import { LiveProcurementTable, ProcurementHighlights } from '@/components/live-procurement'
 import { ProcurementTable } from '@/components/procurement-table'
 import { ProcurementYearChart } from '@/components/procurement-chart'
-import { fetchEgpFeed } from '@/lib/egp'
+import { ProcurementPublisherLeaderboard, type ProcurementPublisher } from '@/components/procurement-publisher-leaderboard'
+import { egpAgencySlug, fetchEgpFeed } from '@/lib/egp'
 import { fetchOcdsTenders, summarizeOcds } from '@/lib/ocds'
 import { pageMetadata } from '@/lib/seo'
 
@@ -17,6 +18,16 @@ export default async function ProcurementPage() {
   const [live, historicalTenders] = await Promise.all([fetchEgpFeed(), fetchOcdsTenders()])
   const historical = summarizeOcds(historicalTenders)
   const liveSummary = live.summary
+  const publisherCounts = new Map<string, ProcurementPublisher>()
+  for (const tender of live.tenders) {
+    const name = tender.office_name.trim().replace(/\s+/g, ' ') || 'Unknown publishing office'
+    const key = tender.office_code?.toLowerCase() || name.toLocaleLowerCase('en')
+    const existing = publisherCounts.get(key)
+    publisherCounts.set(key, { name: existing?.name ?? name, slug: egpAgencySlug(name, tender.office_code), count: (existing?.count ?? 0) + 1 })
+  }
+  const publishers = [...publisherCounts.values()]
+    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
+    .slice(0, 100)
   const summaryCards = liveSummary ? [
     { label: 'Notices in portal', value: liveSummary.total, note: 'All statuses' },
     { label: 'Open notices', value: liveSummary.open, note: 'Accepting bids' },
@@ -38,6 +49,7 @@ export default async function ProcurementPage() {
       {summaryCards.length > 0 && <section className="projects-summary procurement-summary" aria-label="Live e-GP overview">
         {summaryCards.map(card => <div key={card.label}><span>{card.label}</span><strong>{card.value.toLocaleString()}</strong><small>{card.note}</small></div>)}
       </section>}
+      <ProcurementPublisherLeaderboard publishers={publishers} totalPublishers={publisherCounts.size} sampledNotices={live.tenders.length} totalNotices={live.total} complete={live.complete} />
       {!live.tenders.length ? (
         <section className="panel" style={{ marginBottom: '.75rem' }}>
           <div style={{ padding: '1.5rem', textAlign: 'center' }}>
@@ -56,7 +68,7 @@ export default async function ProcurementPage() {
               Official e-GP portal <ExternalLink size={12} />
             </a>
           </div>
-          <LiveProcurementTable tenders={live.tenders} total={live.total} updatedAt={live.updatedAt} />
+          <LiveProcurementTable tenders={live.tenders} total={live.total} updatedAt={live.updatedAt} complete={live.complete} hideTopAgencies />
         </section>
       )}
 

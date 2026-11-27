@@ -5,6 +5,7 @@ import { projects, slugify, findProjectBySlug, parseBudgetCr, utilizationPct, pr
 import { StatusBadge } from '@/components/shared'
 import { RelatedDatasets } from '@/components/related-datasets'
 import { ProjectGallery } from '@/components/project-gallery'
+import { PROJECT_PHOTOS } from '@/lib/project-photos'
 import type { ProjectUpdate } from '@/lib/types'
 import { formatNpr, formatNprText } from '@/lib/currency'
 import { pageMetadata, truncate } from '@/lib/seo'
@@ -21,6 +22,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     title: `${project.name} progress and budget`,
     description: truncate(project.description || `${project.name}: budget, reported progress, status and evidence for this national priority project in ${project.province}, Nepal.`),
     path: `/projects/${slug}`,
+    image: PROJECT_PHOTOS[project.name]?.[0]?.src ?? project.photos?.[0]?.src ?? project.gallery?.[0] ?? (!project.image.startsWith('/images/nepal-infrastructure') ? project.image : undefined),
+    imageAlt: `${project.name} project photo`,
   })
 }
 
@@ -81,7 +84,13 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
   const { slug } = await params
   const project = findProjectBySlug(slug)
   if (!project) notFound()
-  const projectImages = Array.from(new Set([project.image, ...(project.gallery ?? [])]))
+  const projectImages = PROJECT_PHOTOS[project.name] ?? Array.from(new Set([project.image, ...(project.gallery ?? [])])).map((src, index) => ({
+    src,
+    credit: 'Photo credit not listed in the project record',
+    publishedAt: '',
+    sourceUrl: '',
+    caption: `Project photo ${index + 1}`,
+  }))
 
   const idx = projects.findIndex(p => slugify(p.name) === slug)
   const prev = idx > 0 ? projects[idx - 1] : null
@@ -263,10 +272,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
             <section className="panel">
               <p className="eyebrow" style={{ margin: 0 }}>GALLERY</p>
               <h2 className="font-serif" style={{ fontWeight: 500, fontSize: '1.1rem', margin: '.2rem 0 0' }}>Project gallery</h2>
-              <p className="muted" style={{ marginTop: '.25rem' }}>Browse {projectImages.length} public project {projectImages.length === 1 ? 'photo' : 'photos'}.</p>
-              {project.galleryCredit && project.gallerySourceUrl && <p className="text-tertiary" style={{ margin: '-.35rem 0 .75rem', fontSize: '.63rem' }}>
-                Photos by {project.galleryCredit} · <a href={project.gallerySourceUrl} target="_blank" rel="noreferrer" className="text-primary" style={{ textDecoration: 'underline', textUnderlineOffset: 2 }}>view original photo story</a>
-              </p>}
+                <p className="muted" style={{ marginTop: '.25rem' }}>Browse {projectImages.length} project {projectImages.length === 1 ? 'photo' : 'photos'}, sorted by photo date where known and source date otherwise.</p>
               <ProjectGallery images={projectImages} projectName={project.name} />
             </section>
           )}

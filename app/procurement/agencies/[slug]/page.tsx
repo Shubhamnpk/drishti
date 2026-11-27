@@ -18,7 +18,7 @@ import {
   TrendingUp,
 } from 'lucide-react'
 import { LiveProcurementTable } from '@/components/live-procurement'
-import { fetchEgpFeed, type EgpTender } from '@/lib/egp'
+import { egpAgencySlug, fetchEgpFeed, type EgpTender } from '@/lib/egp'
 import { fetchOcdsTenders, type OcdsTender } from '@/lib/ocds'
 import { slugify } from '@/lib/data'
 import { pageMetadata } from '@/lib/seo'
@@ -51,7 +51,7 @@ function daysUntil(deadline: string | null | undefined): number | null {
 export async function generateMetadata({ params }: Props) {
   const { slug } = await params
   const feed = await fetchEgpFeed()
-  const match = feed.tenders.find(t => slugify(t.office_name) === slug)
+  const match = feed.tenders.find(t => egpAgencySlug(t.office_name, t.office_code) === slug || slugify(t.office_name) === slug)
   const name = match ? match.office_name : 'Procuring Agency'
   return pageMetadata({
     title: `${name} · Public Procurement & Tenders`,
@@ -69,21 +69,20 @@ export default async function AgencyProcurementPage({ params }: Props) {
     fetchOcdsTenders().catch(() => [] as OcdsTender[]),
   ])
 
-  // Group all tenders matching this agency slug
-  const agencyTenders = feed.tenders.filter(t => slugify(t.office_name) === slug)
-
-  // Also check historical OCDS for buyer matches
+  // Use the official office code in new profile URLs; keep old name-only URLs working.
+  const agencyTenders = feed.tenders.filter(t => egpAgencySlug(t.office_name, t.office_code) === slug || slugify(t.office_name) === slug)
+  const agencyName = agencyTenders[0]?.office_name || 'Procuring Agency'
+  const normalizedAgencyName = agencyName.toLocaleLowerCase('en')
   const ocdsMatches = historicalTenders.filter(t => {
-    const buyer = t.buyer?.toLowerCase() ?? ''
-    const targetSlug = slug.replace(/-/g, ' ')
-    return buyer.includes(targetSlug)
+    const buyer = t.buyer?.trim().toLocaleLowerCase('en') ?? ''
+    return buyer.includes(normalizedAgencyName) || (normalizedAgencyName.length > 8 && normalizedAgencyName.includes(buyer))
   })
 
   if (agencyTenders.length === 0 && ocdsMatches.length === 0) {
     notFound()
   }
 
-  const agencyName = agencyTenders[0]?.office_name || ocdsMatches[0]?.buyer || 'Procuring Agency'
+  const profileAgencyName = agencyTenders[0]?.office_name || ocdsMatches[0]?.buyer || agencyName
 
   // Statistics calculation
   let works = 0, goods = 0, consult = 0, others = 0, urgent = 0, soon = 0
@@ -138,10 +137,12 @@ export default async function AgencyProcurementPage({ params }: Props) {
   // Rank among all agencies in feed
   const allAgencyCounts = new Map<string, number>()
   for (const t of feed.tenders) {
-    allAgencyCounts.set(t.office_name, (allAgencyCounts.get(t.office_name) ?? 0) + 1)
+    const key = t.office_code?.toLowerCase() || t.office_name.trim().toLocaleLowerCase('en')
+    allAgencyCounts.set(key, (allAgencyCounts.get(key) ?? 0) + 1)
   }
   const rankedAgencies = Array.from(allAgencyCounts.entries()).sort((a, b) => b[1] - a[1])
-  const agencyRankIndex = rankedAgencies.findIndex(([name]) => name === agencyName)
+  const selectedAgencyKey = agencyTenders[0]?.office_code?.toLowerCase() || agencyName.trim().toLocaleLowerCase('en')
+  const agencyRankIndex = rankedAgencies.findIndex(([key]) => key === selectedAgencyKey)
   const agencyRank = agencyRankIndex >= 0 ? agencyRankIndex + 1 : null
 
   return (
@@ -155,7 +156,7 @@ export default async function AgencyProcurementPage({ params }: Props) {
         <span className="text-secondary">Agencies</span>
         <span className="text-tertiary">/</span>
         <span className="text-primary font-semibold" style={{ maxWidth: 360, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {agencyName}
+          {profileAgencyName}
         </span>
       </nav>
 
@@ -421,7 +422,7 @@ export default async function AgencyProcurementPage({ params }: Props) {
             <div className="section-heading">
               <div>
                 <p className="eyebrow">TENDER DIRECTORY</p>
-                <h2>All notices by {agencyName}</h2>
+                <h2>All notices by {profileAgencyName}</h2>
               </div>
               <span className="muted" style={{ fontSize: '.68rem' }}>
                 {totalNotices.toLocaleString()} total loaded
@@ -432,6 +433,7 @@ export default async function AgencyProcurementPage({ params }: Props) {
               tenders={agencyTenders}
               total={totalNotices}
               updatedAt={feed.updatedAt}
+              complete={feed.complete}
               initialAgency={agencyName}
               hideTopAgencies={true}
             />

@@ -2,11 +2,15 @@
 
 import { FormEvent, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { ArrowDown, ArrowUpRight, Check, FileText, Languages, Newspaper, Search, Share2, SlidersHorizontal, X } from 'lucide-react'
+import { ArrowDown, ArrowUpRight, Check, Expand, FileText, Newspaper, Search, Share2, SlidersHorizontal, X } from 'lucide-react'
 import { useDocViewer } from '@/components/document-viewer-provider'
+import { NepalFlag, UkFlag } from '@/components/language-flags'
+import { OriginalArticle } from '@/components/original-article'
+import { TranslatedArticle } from '@/components/translated-article'
 import {
   formatNepalGovDate,
   isNepaliText,
+  nepalGovUpdatePageUrl,
   nepalGovThumbnailUrl,
   nepalGovAttachmentUrl,
   nepalGovAttachmentImageUrl,
@@ -72,7 +76,7 @@ export function GovernmentUpdatesFeed({ initial, initiallyUnavailable }: Props) 
   const [category, setCategory] = useState('')
   const [copied, setCopied] = useState(false)
   const [translation, setTranslation] = useState<{ id: string; target: TranslationLanguage; text: string } | null>(null)
-  const [translationVisible, setTranslationVisible] = useState(false)
+  const [readerView, setReaderView] = useState<'original' | 'translated'>('original')
   const [translationBusy, setTranslationBusy] = useState(false)
   const [translationError, setTranslationError] = useState('')
   const [imagePreview, setImagePreview] = useState<{ src: string; alt: string } | null>(null)
@@ -109,7 +113,7 @@ export function GovernmentUpdatesFeed({ initial, initiallyUnavailable }: Props) 
   }, [selected, imagePreview])
 
   async function shareUpdate(item: NepalGovUpdate) {
-    const url = `${window.location.origin}/updates/${encodeURIComponent(item.id)}`
+    const url = `${window.location.origin}/news/${encodeURIComponent(item.id)}`
     try {
       if (navigator.share) {
         await navigator.share({ title: item.title, url })
@@ -129,17 +133,18 @@ export function GovernmentUpdatesFeed({ initial, initiallyUnavailable }: Props) 
 
   async function translateUpdate(item: NepalGovUpdate) {
     if (translation?.id === item.id) {
-      setTranslationVisible(value => !value)
+      setReaderView('translated')
       return
     }
     const source: TranslationLanguage = isNepaliText(`${item.title} ${item.content}`) ? 'ne' : 'en'
     const target: TranslationLanguage = source === 'ne' ? 'en' : 'ne'
+    setReaderView('translated')
     setTranslationBusy(true)
     setTranslationError('')
     try {
       const text = await translateWithMyMemory(`${item.title}\n\n${item.content}`, source, target)
       setTranslation({ id: item.id, target, text })
-      setTranslationVisible(true)
+      setReaderView('translated')
     } catch (cause) {
       setTranslationError(cause instanceof Error ? cause.message : 'Translation failed. Please try again.')
     } finally {
@@ -192,6 +197,7 @@ export function GovernmentUpdatesFeed({ initial, initiallyUnavailable }: Props) 
   function openCard(item: NepalGovUpdate, target: EventTarget | null) {
     if (target instanceof Element && target.closest('a, button, input, select')) return
     setTranslationError('')
+    setReaderView('original')
     setSelected(item)
   }
 
@@ -203,6 +209,7 @@ export function GovernmentUpdatesFeed({ initial, initiallyUnavailable }: Props) 
       const payload = await response.json()
       if (!response.ok) throw new Error(payload.error || 'Could not open this update.')
       setTranslationError('')
+      setReaderView('original')
       setSelected(payload as NepalGovUpdate)
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Could not open this update.')
@@ -213,7 +220,7 @@ export function GovernmentUpdatesFeed({ initial, initiallyUnavailable }: Props) 
     <section className="gov-feed" aria-label="Government updates feed">
       <div className="gov-feed-tabs" role="tablist" aria-label="Government portal feed">
         <button role="tab" aria-selected={feedType === 'news'} className={feedType === 'news' ? 'active' : ''} onClick={() => switchFeed('news')}><Newspaper size={16} /> News</button>
-        <button role="tab" aria-selected={feedType === 'tenders'} className={feedType === 'tenders' ? 'active' : ''} onClick={() => switchFeed('tenders')}><FileText size={16} /> Tenders <span>PPMO</span></button>
+        <button role="tab" aria-selected={feedType === 'tenders'} className={feedType === 'tenders' ? 'active' : ''} onClick={() => switchFeed('tenders')}><FileText size={16} /> Tenders</button>
       </div>
       <div className="gov-feed-tools">
         <form className="gov-search" onSubmit={submitSearch}>
@@ -262,16 +269,40 @@ export function GovernmentUpdatesFeed({ initial, initiallyUnavailable }: Props) 
       {searchResults && <button className="gov-back-feed" onClick={() => { setSearchResults(null); setQuery('') }}>Back to recent updates</button>}
       {selected && <div className="gov-reader-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) setSelected(null) }}>
         <aside className="gov-reader-panel" role="dialog" aria-modal="true" aria-label="Read government update">
-          <div className="gov-reader-head"><div><span className="eyebrow">GOV NEWS</span><span>{departmentOf(selected)}</span></div><button className="gov-reader-close" onClick={() => setSelected(null)} aria-label="Close reader"><X size={19} /></button></div>
+          <div className="gov-reader-head">
+            <div><span className="eyebrow">GOVERNMENT UPDATE</span></div>
+            <button className="gov-reader-close" onClick={() => setSelected(null)} aria-label="Close reader"><X size={19} /></button>
+          </div>
           <div className="gov-reader-body">
-            <time dateTime={selected.updatedAt || selected.createdAt}>{formatNepalGovDate(selected.updatedAt || selected.createdAt)}</time>
-            <h2 lang={isNepaliText(selected.title) ? 'ne' : 'en'}>{selected.title}</h2>
-            {selected.author?.name && <p className="gov-reader-author">{selected.author.name}</p>}
-            {topicsOf(selected).length > 0 && <div className="gov-reader-tags">{topicsOf(selected).map(tag => <span className="gov-tag" key={tag}>{tag}</span>)}</div>}
-            {selected.thumbnailFilename && <button className="gov-reader-image-button" onClick={() => setImagePreview({ src: nepalGovThumbnailUrl(selected.id), alt: selected.title })} aria-label="Enlarge update image"><img className="gov-reader-image" src={nepalGovThumbnailUrl(selected.id)} alt="Update image; select to enlarge" /></button>}
-            <div className="gov-reader-content" lang={isNepaliText(selected.content) ? 'ne' : 'en'}>{selected.content}</div>
-            {translationVisible && translation?.id === selected.id && <section className="gov-translation-result"><div><Languages size={15} /><strong>{translation.target === 'en' ? 'English translation' : 'Nepali translation'}</strong><span>MyMemory</span></div><p lang={translation.target}>{translation.text}</p></section>}
-            {translationError && <div className="gov-translation-error" role="status">{translationError}</div>}
+            <header className="gov-reader-lead">
+              <div className="gov-reader-lead-meta">
+                <span className="gov-reader-department">{departmentOf(selected)}</span>
+                <time dateTime={selected.updatedAt || selected.createdAt}>{formatNepalGovDate(selected.updatedAt || selected.createdAt)}</time>
+              </div>
+              <h2 lang={isNepaliText(selected.title) ? 'ne' : 'en'}>{selected.title}</h2>
+              {selected.author?.name && <p className="gov-reader-author">{selected.author.name}</p>}
+              {topicsOf(selected).length > 0 && <div className="gov-reader-tags">{topicsOf(selected).map(tag => <span className="gov-tag" key={tag}>{tag}</span>)}</div>}
+              {selected.thumbnailFilename && <button className="gov-reader-image-button" onClick={() => setImagePreview({ src: nepalGovThumbnailUrl(selected.id), alt: selected.title })} aria-label="Enlarge update image"><img className="gov-reader-image" src={nepalGovThumbnailUrl(selected.id)} alt="Update image; select to enlarge" /><span className="gov-reader-image-expand"><Expand size={15} /> View image</span></button>}
+            </header>
+            <div className="gov-reader-toolbar">
+              <div className="gov-lang-switch" role="tablist" aria-label="Article language">
+                <button role="tab" aria-selected={readerView === 'original'} className={readerView === 'original' ? 'active' : ''} onClick={() => setReaderView('original')} title={isNepaliText(`${selected.title} ${selected.content}`) ? 'Original: Nepali' : 'Original: English'}>{isNepaliText(`${selected.title} ${selected.content}`) ? <NepalFlag size={17} /> : <UkFlag size={17} />} {isNepaliText(`${selected.title} ${selected.content}`) ? 'NP' : 'EN'}</button>
+                <button role="tab" aria-selected={readerView === 'translated'} className={readerView === 'translated' ? 'active' : ''} disabled={translationBusy} onClick={() => { if (translation?.id === selected.id) setReaderView('translated'); else void translateUpdate(selected) }} title={isNepaliText(`${selected.title} ${selected.content}`) ? 'Translate to English' : 'Translate to Nepali'}>{isNepaliText(`${selected.title} ${selected.content}`) ? <UkFlag size={17} /> : <NepalFlag size={17} />} {isNepaliText(`${selected.title} ${selected.content}`) ? 'EN' : 'NP'}</button>
+              </div>
+              <div className="gov-reader-toolbar-actions">
+                <button type="button" onClick={() => void shareUpdate(selected)}>{copied ? <Check size={15} /> : <Share2 size={15} />} Share</button>
+                <Link href={`/news/${encodeURIComponent(selected.id)}`}>Full page <ArrowUpRight size={14} /></Link>
+              </div>
+            </div>
+            {readerView === 'original' && <OriginalArticle text={selected.content} target={isNepaliText(selected.content) ? 'ne' : 'en'} />}
+            {readerView === 'translated' && (
+              <div className="gov-reader-translation" aria-live="polite">
+                {translationBusy && <div className="gov-translation-skeleton"><span /><span /><span /><span /></div>}
+                {!translationBusy && translationError && <div className="gov-translation-error" role="status">{translationError}<button onClick={() => void translateUpdate(selected)}>Retry</button></div>}
+                {!translationBusy && !translationError && translation?.id === selected.id && <TranslatedArticle text={translation.text} target={translation.target} />}
+              </div>
+            )}
+            {translationError && readerView === 'original' && <div className="gov-translation-error" role="status">{translationError}</div>}
             {selected.attachments.length > 0 && <section className="gov-reader-files"><h3>Documents & attachments</h3>{selected.attachments.map(file => {
               const url = nepalGovAttachmentUrl(selected.id, file.id)
               const isPdf = file.mimeType.toLowerCase().includes('pdf') || file.filename.toLowerCase().endsWith('.pdf')
@@ -279,8 +310,7 @@ export function GovernmentUpdatesFeed({ initial, initiallyUnavailable }: Props) 
               return <div className={`gov-reader-file${isImage ? ' has-image' : ''}`} key={file.id}>{isImage ? <button className="gov-attachment-image" onClick={() => setImagePreview({ src: nepalGovAttachmentImageUrl(selected.id, file.id), alt: file.filename })} aria-label={`Enlarge ${file.filename}`}><img src={nepalGovAttachmentImageUrl(selected.id, file.id)} alt={file.filename} loading="lazy" /></button> : <FileText size={17} />}<span><strong>{file.filename}</strong><small>{file.mimeType} · {(file.size / 1024).toFixed(0)} KB</small></span>{isPdf && <button onClick={() => openDocument(url, file.filename)}>Preview PDF</button>}<a href={url} target="_blank" rel="noreferrer" aria-label={`Open ${file.filename}`}><ArrowUpRight size={15} /></a></div>
             })}</section>}
           </div>
-          <div className="gov-reader-actions"><button onClick={() => void shareUpdate(selected)}>{copied ? <Check size={16} /> : <Share2 size={16} />}{copied ? 'Link copied' : 'Share'}</button><button className="gov-translate-action" title="Free MyMemory translation. Text is sent to MyMemory; anonymous use is limited to 5,000 characters per day." disabled={translationBusy} onClick={() => void translateUpdate(selected)}><Languages size={15} />{translationBusy ? 'Translating…' : translation?.id === selected.id ? translationVisible ? 'Show original' : 'Show translation' : `Translate to ${isNepaliText(`${selected.title} ${selected.content}`) ? 'English' : 'Nepali'}`}</button><Link href={`/updates/${encodeURIComponent(selected.id)}`}>Full page <ArrowUpRight size={14} /></Link></div>
-          <p className="gov-translation-disclosure">Free MyMemory translation; article text is sent to the service. Anonymous use has a daily limit.</p>
+          <p className="gov-translation-disclosure">Article text and the project contact email are sent to MyMemory. Machine translations may be inaccurate.</p>
         </aside>
       </div>}
       {imagePreview && <div className="gov-image-lightbox" role="dialog" aria-modal="true" aria-label={imagePreview.alt} onMouseDown={event => { if (event.target === event.currentTarget) setImagePreview(null) }} onKeyDown={event => { event.stopPropagation(); if (event.key === 'Escape') setImagePreview(null) }}><button className="gov-image-close" onClick={() => setImagePreview(null)} aria-label="Close image"><X size={22} /></button><img src={imagePreview.src} alt={imagePreview.alt} /><p>{imagePreview.alt}<span>Click outside or press Esc to close</span></p></div>}

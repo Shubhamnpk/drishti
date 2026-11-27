@@ -2,6 +2,13 @@ import type { Metadata } from 'next'
 import { DISTRICTS, LOCAL_UNITS } from '@/lib/geo-constants'
 import { pageMetadata } from '@/lib/seo'
 
+export function generateStaticParams() {
+  return LOCAL_UNITS.flatMap((unit) => {
+    const district = DISTRICTS.find((item) => item.name === unit.district)
+    return district ? [{ district: district.slug, palika: unit.slug }] : []
+  })
+}
+
 export async function generateMetadata({ params }: { params: Promise<{ district: string; palika: string }> }): Promise<Metadata> {
   const { district: districtSlug, palika: palikaSlug } = await params
   const district = DISTRICTS.find((item) => item.slug === districtSlug)

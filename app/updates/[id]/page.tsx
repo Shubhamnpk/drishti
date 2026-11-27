@@ -2,10 +2,10 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ArrowLeft, ArrowUpRight, Download, FileText, Heart, MessageCircle } from 'lucide-react'
+import { GovUpdateTranslator } from '@/components/gov-update-translator'
 import {
   fetchNepalGovUpdate,
   formatNepalGovDate,
-  googleTranslateUrl,
   isNepaliText,
   nepalGovAttachmentUrl,
   nepalGovThumbnailUrl,
@@ -38,7 +38,8 @@ export default async function GovernmentUpdateDetail({ params }: Props) {
       <div className="gov-detail-top"><span className="gov-tag">{department}</span><time dateTime={item.updatedAt || item.createdAt}>{formatNepalGovDate(item.updatedAt || item.createdAt)}</time></div>
       <h1 lang={isNepaliText(item.title) ? 'ne' : 'en'}>{item.title}</h1>
       {item.author?.name && <p className="gov-byline">Published by <strong>{item.author.name}</strong></p>}
-      <div className="gov-detail-actions"><a href={googleTranslateUrl(translateText)} target="_blank" rel="noreferrer">Translate to English <ArrowUpRight size={14} /></a><a href={nepalGovUpdatePageUrl(item.id)} target="_blank" rel="noreferrer">View on official portal <ArrowUpRight size={14} /></a></div>
+      <div className="gov-detail-actions"><a href={nepalGovUpdatePageUrl(item.id)} target="_blank" rel="noreferrer">View on official portal <ArrowUpRight size={14} /></a></div>
+      <GovUpdateTranslator text={translateText} />
       {item.thumbnailFilename && <a className="gov-detail-image" href={nepalGovThumbnailUrl(item.id)} target="_blank" rel="noreferrer"><img src={nepalGovThumbnailUrl(item.id)} alt="Image attached to this government update" /></a>}
       <div className="gov-detail-content" lang={lang}>{item.content}</div>
       {(item.attachments.length > 0 || item.likes.length > 0 || item.comments.length > 0) && <section className="gov-detail-extras">

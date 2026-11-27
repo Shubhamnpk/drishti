@@ -1,12 +1,12 @@
 import type { Metadata } from 'next'
-import { SITE_NAME, SITE_TAGLINE, SITE_URL } from '@/lib/site'
+import { SITE_NAME, SITE_URL } from '@/lib/site'
 
-/** Shared 1200x630 social card, generated from the site photo. */
+/** Brand mark used whenever a page has no share-specific image. */
 export const OG_IMAGE = {
-  url: '/og/drishti.jpg',
-  width: 1200,
-  height: 630,
-  alt: `${SITE_NAME}: ${SITE_TAGLINE}`,
+  url: '/icon-512.png',
+  width: 512,
+  height: 512,
+  alt: `${SITE_NAME} logo`,
 }
 
 type PageMetadataInput = {
@@ -15,6 +15,8 @@ type PageMetadataInput = {
   /** Canonical path for this page, always starting with a slash. */
   path: string
   noindex?: boolean
+  image?: string
+  imageAlt?: string
 }
 
 /** Absolute URL for a site path. Used by metadata and structured data. */
@@ -42,9 +44,10 @@ export function truncate(text: string, max = 158): string {
  * wholesale unless a segment sets it, which is why every page used to share the
  * homepage's social title. This helper sets all of it explicitly.
  */
-export function pageMetadata({ title, description, path, noindex = false }: PageMetadataInput): Metadata {
+export function pageMetadata({ title, description, path, noindex = false, image, imageAlt }: PageMetadataInput): Metadata {
   const url = absoluteUrl(path)
   const summary = truncate(description)
+  const socialImage = inputImage({ image, imageAlt, title })
 
   return {
     title,
@@ -59,14 +62,20 @@ export function pageMetadata({ title, description, path, noindex = false }: Page
       // pass the plain title here and let Next apply the brand once.
       title,
       description: summary,
-      images: [OG_IMAGE],
+      images: [socialImage],
     },
     twitter: {
       card: 'summary_large_image',
       title,
       description: summary,
-      images: [OG_IMAGE.url],
+      images: [socialImage.url],
     },
     ...(noindex ? { robots: { index: false, follow: true } } : {}),
   }
+}
+
+function inputImage({ image, imageAlt, title }: { image?: string; imageAlt?: string; title: string }) {
+  return image
+    ? { url: image, alt: imageAlt ?? `${title} image` }
+    : OG_IMAGE
 }

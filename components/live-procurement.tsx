@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { Building2, CalendarDays, Check, Download, ExternalLink, FileText, Filter, LoaderCircle, MapPin, RefreshCw, Search, X } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import type { EgpAmendment, EgpDocument, EgpEvent, EgpNotice, EgpTender, EgpTenderDetail } from '@/lib/egp'
-import { egpEventUrl, egpProjectUrl } from '@/lib/egp'
+import { egpAgencySlug, egpEventUrl, egpProjectUrl } from '@/lib/egp'
 import { slugify } from '@/lib/data'
 
 const PAGE_SIZE = 20
@@ -118,12 +118,14 @@ export function LiveProcurementTable({
   tenders,
   total,
   updatedAt,
+  complete = true,
   initialAgency,
   hideTopAgencies = false,
 }: {
   tenders: EgpTender[]
   total: number
   updatedAt: string
+  complete?: boolean
   initialAgency?: string
   hideTopAgencies?: boolean
 }) {
@@ -133,8 +135,11 @@ export function LiveProcurementTable({
   const [refreshing, setRefreshing] = useState(false)
   const [categoryFilter, setCategoryFilter] = useState<'all' | 'works' | 'goods' | 'consultancy' | 'others'>('all')
   const [urgencyFilter, setUrgencyFilter] = useState<'all' | 'urgent' | 'soon'>('all')
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [sortBy, setSortBy] = useState<'newest' | 'deadline' | 'title'>('newest')
   const [agencyFilter, setAgencyFilter] = useState<string | null>(initialAgency ?? null)
   const router = useRouter()
+  const statusOptions = useMemo(() => [...new Set(tenders.map(tender => tender.status.trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b)), [tenders])
 
   const stats = useStats(tenders)
 
@@ -163,6 +168,8 @@ export function LiveProcurementTable({
         return false
       }
 
+      if (statusFilter !== 'all' && t.status.toLowerCase() !== statusFilter.toLowerCase()) return false
+
       // Text query
       if (q) {
         const match = `${t.title} ${t.office_name} ${t.reference} ${t.location} ${t.category_name} ${t.method}`.toLowerCase().includes(q)
@@ -171,9 +178,21 @@ export function LiveProcurementTable({
 
       return true
     })
-  }, [tenders, query, categoryFilter, urgencyFilter, agencyFilter])
+  }, [tenders, query, categoryFilter, urgencyFilter, agencyFilter, statusFilter])
 
-  const shown = filtered.slice(0, visible)
+  const sorted = useMemo(() => {
+    const rows = [...filtered]
+    if (sortBy === 'deadline') {
+      rows.sort((a, b) => (a.deadline ? Date.parse(a.deadline) : Number.MAX_SAFE_INTEGER) - (b.deadline ? Date.parse(b.deadline) : Number.MAX_SAFE_INTEGER))
+    } else if (sortBy === 'title') {
+      rows.sort((a, b) => a.title.localeCompare(b.title))
+    } else {
+      rows.sort((a, b) => Date.parse(b.publish_at ?? '') - Date.parse(a.publish_at ?? ''))
+    }
+    return rows
+  }, [filtered, sortBy])
+
+  const shown = sorted.slice(0, visible)
 
   function handleRefresh() {
     setRefreshing(true)
@@ -184,12 +203,14 @@ export function LiveProcurementTable({
   function clearAllFilters() {
     setCategoryFilter('all')
     setUrgencyFilter('all')
+    setStatusFilter('all')
+    setSortBy('newest')
     setAgencyFilter(null)
     setQuery('')
     setVisible(PAGE_SIZE)
   }
 
-  const hasActiveFilters = categoryFilter !== 'all' || urgencyFilter !== 'all' || Boolean(agencyFilter) || Boolean(query)
+  const hasActiveFilters = categoryFilter !== 'all' || urgencyFilter !== 'all' || statusFilter !== 'all' || Boolean(agencyFilter) || Boolean(query)
   const maxCount = stats.topAgencies[0]?.count ?? 1
 
   return (
@@ -404,6 +425,12 @@ export function LiveProcurementTable({
               <button type="button" onClick={() => setUrgencyFilter('all')} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'flex' }}><X size={10} /></button>
             </span>
           )}
+          {statusFilter !== 'all' && (
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '.25rem', padding: '.15rem .45rem', borderRadius: 6, fontSize: '.58rem', fontWeight: 650, background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+              Status: {statusFilter.toLowerCase().replace(/\b\w/g, char => char.toUpperCase())}
+              <button type="button" onClick={() => setStatusFilter('all')} aria-label="Clear status filter" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'flex' }}><X size={10} /></button>
+            </span>
+          )}
           {agencyFilter && (
             <span style={{
               display: 'inline-flex', alignItems: 'center', gap: '.25rem',
@@ -438,17 +465,36 @@ export function LiveProcurementTable({
       )}
 
       {/* Search + refresh row */}
-      <div style={{ display: 'flex', gap: '.75rem', alignItems: 'center', flexWrap: 'wrap', marginTop: '.75rem' }}>
-        <label className="search" style={{ maxWidth: 360, flex: 1 }}>
-          <Search size={16} />
-          <input
-            aria-label="Search live procurement notices"
-            placeholder="Search work, office, location, or reference..."
-            value={query}
-            onChange={event => { setQuery(event.target.value); setVisible(PAGE_SIZE) }}
-          />
-        </label>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '.55rem', marginLeft: 'auto' }}>
+      <div className="live-procurement-search">
+        <Search size={16} aria-hidden="true" />
+        <input
+          aria-label="Search live procurement notices"
+          placeholder="Search work, office, location, or reference..."
+          value={query}
+          onChange={event => { setQuery(event.target.value); setVisible(PAGE_SIZE) }}
+        />
+        {query && (
+          <button
+            type="button"
+            className="search-clear"
+            aria-label="Clear search"
+            onClick={() => { setQuery(''); setVisible(PAGE_SIZE) }}
+          >
+            <X size={16} />
+          </button>
+        )}
+        <div className="live-procurement-selects">
+          <label><span>Status</span><select aria-label="Filter notices by status" value={statusFilter} onChange={event => { setStatusFilter(event.target.value); setVisible(PAGE_SIZE) }}>
+            <option value="all">All statuses</option>
+            {statusOptions.map(status => <option key={status} value={status}>{status.toLowerCase().replace(/\b\w/g, char => char.toUpperCase())}</option>)}
+          </select></label>
+          <label><span>Sort</span><select aria-label="Sort live procurement notices" value={sortBy} onChange={event => { setSortBy(event.target.value as typeof sortBy); setVisible(PAGE_SIZE) }}>
+            <option value="newest">Newest first</option>
+            <option value="deadline">Deadline soonest</option>
+            <option value="title">Title A–Z</option>
+          </select></label>
+        </div>
+        <div className="live-procurement-refresh">
           <span className="text-tertiary" style={{ fontSize: '.63rem' }}>
             Last refreshed: {formatUpdatedAt(updatedAt)}
           </span>
@@ -467,8 +513,8 @@ export function LiveProcurementTable({
             Refresh
           </button>
         </div>
-        <span className="muted" style={{ fontSize: '.63rem', width: '100%' }}>
-          Showing {shown.length.toLocaleString()} of {filtered.length.toLocaleString()} matches · {total.toLocaleString()} total at e-GP
+        <span className="muted live-procurement-result-count">
+          Showing {shown.length.toLocaleString()} of {sorted.length.toLocaleString()} matches · {complete ? `all ${total.toLocaleString()} e-GP notices loaded` : `${tenders.length.toLocaleString()} of ${total.toLocaleString()} e-GP notices loaded`}
         </span>
       </div>
 
@@ -489,78 +535,59 @@ export function LiveProcurementTable({
           )}
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '.5rem', marginTop: '.9rem' }}>
+        <div className="live-tender-list">
           {shown.map(tender => {
             const days = daysUntil(tender.deadline)
             const urgent = days !== null && days < 7
             const soon = days !== null && days < 30
             const borderColor = urgent ? 'rgba(220,38,38,.35)' : soon ? 'rgba(217,119,6,.3)' : 'var(--border-light)'
-            const agencySlug = slugify(tender.office_name)
+            const agencySlug = egpAgencySlug(tender.office_name, tender.office_code)
             return (
               <article
                 key={tender.id}
-                className="bg-card rounded-lg shadow-sm"
+                className="bg-card rounded-lg shadow-sm live-tender-card"
                 style={{
                   border: `1px solid ${borderColor}`,
-                  padding: '.75rem .9rem',
-                  display: 'grid',
-                  gridTemplateColumns: '1fr auto',
-                  gap: '.5rem .75rem',
-                  alignItems: 'start',
                 }}
               >
-                {/* Left: title + meta */}
-                <div style={{ minWidth: 0 }}>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedId(tender.id)}
-                    className="text-primary"
-                    style={{ padding: 0, textAlign: 'left', fontSize: '.78rem', lineHeight: 1.4, fontWeight: 650, background: 'none', border: 'none', cursor: 'pointer' }}
-                  >
-                    {tender.title}
-                    <span className="text-tertiary" style={{ fontSize: '.6rem', fontWeight: 400, marginLeft: '.35rem' }}>View details</span>
-                  </button>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '.3rem .6rem', marginTop: '.35rem', alignItems: 'center' }}>
+                <div className="live-tender-card-main">
+                  <div className="live-tender-card-heading">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedId(tender.id)}
+                      className="text-primary live-tender-title"
+                      aria-label={`Open tender details: ${tender.title}`}
+                    >
+                      {tender.title}
+                    </button>
+                    <div className="live-tender-deadline">
+                      <DeadlinePill deadline={tender.deadline} />
+                      {tender.deadline && <span className="text-tertiary">{formatNepalDate(tender.deadline)}</span>}
+                    </div>
+                  </div>
+                  <div className="live-tender-office-line">
                     <Link
                       href={`/procurement/agencies/${agencySlug}`}
                       title={`View ${tender.office_name} profile`}
-                      className="text-secondary"
-                      style={{
-                        display: 'inline-flex', alignItems: 'center', gap: '.25rem', fontSize: '.63rem',
-                        textDecoration: 'none', fontWeight: 550,
-                      }}
+                      className="live-tender-agency"
                     >
-                      <Building2 size={10} className="text-primary" />
-                      <span className="hover:underline">{tender.office_name}</span>
+                      <Building2 size={13} className="text-primary" />
+                      <span>{tender.office_name}</span>
                     </Link>
                     {tender.location && (
-                      <span className="text-tertiary" style={{ display: 'flex', alignItems: 'center', gap: '.2rem', fontSize: '.63rem' }}>
-                        <MapPin size={10} /> {tender.location}
+                      <span className="live-tender-location">
+                        <MapPin size={12} /> {tender.location}
                       </span>
                     )}
-                    <span className="text-tertiary" style={{ fontSize: '.6rem' }}>{tender.reference}</span>
                   </div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '.3rem', marginTop: '.4rem', alignItems: 'center' }}>
+                  <div className="live-tender-tags">
                     <CategoryBadge category={tender.category_name || tender.category} />
+                    {tender.status && <span className="live-tender-status">{tender.status.toLowerCase().replace(/\b\w/g, char => char.toUpperCase())}</span>}
                     {tender.method && (
-                      <span style={{
-                        display: 'inline-block', padding: '.15rem .45rem', borderRadius: 6,
-                        fontSize: '.58rem', fontWeight: 600,
-                        background: 'var(--bg-sunken)', color: 'var(--text-secondary)',
-                      }}>
-                        {tender.method}
-                      </span>
+                      <span className="live-tender-method">{tender.method}</span>
                     )}
+                    {tender.reference && <span className="live-tender-reference">Ref {tender.reference}</span>}
                   </div>
-                </div>
-                {/* Right: deadline pill */}
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '.3rem', paddingTop: '.1rem' }}>
-                  <DeadlinePill deadline={tender.deadline} />
-                  {tender.deadline && (
-                    <span className="text-tertiary" style={{ fontSize: '.58rem', textAlign: 'right', whiteSpace: 'nowrap' }}>
-                      {formatNepalDate(tender.deadline)}
-                    </span>
-                  )}
                 </div>
               </article>
             )

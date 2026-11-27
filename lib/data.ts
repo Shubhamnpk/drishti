@@ -2748,7 +2748,6 @@ export const projects: Project[] = [
     "image": "https://upload.wikimedia.org/wikipedia/commons/6/60/Melamchi_Project_Camp.JPG",
     "gallery": [
       "https://upload.wikimedia.org/wikipedia/commons/6/60/Melamchi_Project_Camp.JPG",
-      "https://upload.wikimedia.org/wikipedia/commons/d/db/Gautam_Buddha_International_Airport.jpg"
     ],
     "changeLog": [
       {

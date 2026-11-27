@@ -1,7 +1,8 @@
 export type TranslationLanguage = 'en' | 'ne'
 
 const MYMEMORY_ENDPOINT = 'https://api.mymemory.translated.net/get'
-const MAX_QUERY_BYTES = 450
+const MYMEMORY_CONTACT = 'info+translation@drishti.bitnepal.net'
+const MAX_QUERY_BYTES = 1800
 const PAUSE_BETWEEN_REQUESTS_MS = 250
 
 function splitByByteLimit(text: string): Array<{ text: string; separator: string }> {
@@ -53,7 +54,7 @@ export async function translateWithMyMemory(text: string, source: TranslationLan
   const translated: string[] = []
   for (const [index, chunk] of chunks.entries()) {
     if (index > 0) await pause(PAUSE_BETWEEN_REQUESTS_MS)
-    const params = new URLSearchParams({ q: chunk.text, langpair: `${source}|${target}`, mt: '1' })
+    const params = new URLSearchParams({ q: chunk.text, langpair: `${source}|${target}`, mt: '1', de: MYMEMORY_CONTACT })
     const response = await fetch(`${MYMEMORY_ENDPOINT}?${params}`, { headers: { Accept: 'application/json' } })
     const payload: unknown = await response.json().catch(() => null)
     if (response.status === 429) throw new Error('The free translation service is busy or has reached its daily limit. Try again later.')
@@ -61,13 +62,29 @@ export async function translateWithMyMemory(text: string, source: TranslationLan
       throw new Error('The free translation service is temporarily unavailable.')
     }
 
-    const result = payload as { responseStatus?: unknown; responseDetails?: unknown; responseData?: { translatedText?: unknown }; quotaFinished?: unknown }
+    const result = payload as {
+      responseStatus?: unknown
+      responseDetails?: unknown
+      responseData?: { translatedText?: unknown }
+      quotaFinished?: unknown
+      matches?: unknown[]
+    }
     if (result.quotaFinished === true) throw new Error('The free translation service has reached its daily limit. Try again later.')
     if (result.responseStatus !== 200 || typeof result.responseData?.translatedText !== 'string') {
       const detail = typeof result.responseDetails === 'string' ? result.responseDetails : ''
       throw new Error(detail || 'The translation service could not translate this text.')
     }
-    translated.push(`${result.responseData.translatedText}${chunk.separator}`)
+    const neuralMatch = result.matches?.find((match): match is Record<string, unknown> =>
+      typeof match === 'object'
+      && match !== null
+      && typeof (match as Record<string, unknown>).translation === 'string'
+      && ((match as Record<string, unknown>).model === 'neural'
+        || (match as Record<string, unknown>).reference === 'Machine Translation.'
+        || (match as Record<string, unknown>)['created-by'] === 'MT!'))
+    const bestText = typeof neuralMatch?.translation === 'string'
+      ? neuralMatch.translation
+      : result.responseData.translatedText
+    translated.push(`${bestText}${chunk.separator}`)
   }
   return translated.join('')
 }
