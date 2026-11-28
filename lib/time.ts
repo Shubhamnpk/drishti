@@ -16,6 +16,23 @@ export function timeAgo(iso: string | number): string {  const t = typeof iso ==
   return `${years}y ago`
 }
 
+/** Human-friendly relative label for detail panels, e.g. "2 days ago". */
+export function timeAgoLong(iso: string | number): string {
+  const t = typeof iso === 'number' ? iso : Date.parse(iso)
+  if (!t || Number.isNaN(t)) return ''
+  const mins = Math.max(0, Math.floor((Date.now() - t) / 60000))
+  if (mins < 1) return 'just now'
+  if (mins < 60) return `${mins} ${mins === 1 ? 'minute' : 'minutes'} ago`
+  const hours = Math.floor(mins / 60)
+  if (hours < 24) return `${hours} ${hours === 1 ? 'hour' : 'hours'} ago`
+  const days = Math.floor(hours / 24)
+  if (days < 30) return `${days} ${days === 1 ? 'day' : 'days'} ago`
+  const months = Math.floor(days / 30.44)
+  if (months < 12) return `${months} ${months === 1 ? 'month' : 'months'} ago`
+  const years = Math.floor(days / 365.25)
+  return `${years} ${years === 1 ? 'year' : 'years'} ago`
+}
+
 /** Weekday label for a DHM forecast day number (1-based, day 1 = base date). *  Base defaults to today; pass the forecast issue datetime when known.
  *  Returns e.g. "Tue 14". Falls back to `Day N` on bad input. */
 export function forecastDayLabel(dayNum: number, baseIso?: string): string {

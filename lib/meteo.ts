@@ -212,11 +212,14 @@ export type NepalQuake = {
   url: string
 }
 
-/** Recent earthquakes inside Nepal's bbox, newest first (infra-risk overlay). */
-export async function fetchNepalQuakes(limit = 10): Promise<NepalQuake[]> {
+/** All reported earthquakes in Nepal's bbox from the last two years, newest first. */
+export async function fetchNepalQuakes(limit = 20_000): Promise<NepalQuake[]> {
   try {
+    const start = new Date()
+    start.setUTCFullYear(start.getUTCFullYear() - 2)
+    const starttime = start.toISOString().slice(0, 10)
     const res = await fetch(
-      `https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&minlatitude=26&maxlatitude=31&minlongitude=80&maxlongitude=89&limit=${limit}&orderby=time`,
+      `https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=${starttime}&minlatitude=26&maxlatitude=31&minlongitude=80&maxlongitude=89&limit=${limit}&orderby=time`,
       { headers: HEADERS, next: { revalidate: 3600 } },
     )
     if (!res.ok) return []

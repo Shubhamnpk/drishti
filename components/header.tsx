@@ -29,6 +29,7 @@ const navGroups: NavGroup[] = [
     blurb: 'Provinces, districts and the map',
     items: [
       { href: '/places', label: 'Provinces & districts', desc: '7 provinces, 77 districts, all local units', icon: MapPin },
+      { href: '/agencies', label: 'Government agencies', desc: 'Federal, provincial, district & municipal offices', icon: Building2 },
       { href: '/map', label: 'National map', desc: 'Live atlas of Nepal', icon: Map },
     ],
   },

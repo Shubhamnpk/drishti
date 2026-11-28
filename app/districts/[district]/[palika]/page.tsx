@@ -4,7 +4,7 @@ import Link from 'next/link'
 import dynamic from 'next/dynamic'
 import { useParams } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
-import { ArrowLeft, ArrowRight, BookOpen, Cloud, ExternalLink, Home, MapPin, Mountain, Users } from 'lucide-react'
+import { ArrowLeft, ArrowRight, BookOpen, Cloud, Compass, ExternalLink, Home, MapPin, Maximize2, Mountain, Users } from 'lucide-react'
 import {
   KIND_LABEL, fetchDailyForecast, fetchDistrictGeoMeta, fetchDistrictPalikaCensus, fetchNearbyPlaces,
   fetchPlaceAreas, fetchWikiSummary, findDistrict, findPalika, findProvinceByName, palikaCensusOf, palikaKey,
@@ -17,6 +17,7 @@ import type { PalikaCensus } from '@/lib/bipad'
 import { fetchCurrentWeather, fetchCurrentPm25, type CurrentWeather } from '@/lib/meteo'
 import { skyKind, pm25Band } from '@/lib/condition'
 import { WeatherIcon } from '@/components/weather-icon'
+import { GovernmentAgencyDirectory } from '@/components/government-agency-directory'
 
 const DistrictMap = dynamic(() => import('@/components/district-map').then(m => m.DistrictMap), { ssr: false })
 
@@ -238,9 +239,24 @@ export default function PalikaPage() {
         <section className="place-map-section">
           <div className="panel-head" style={{ marginBottom: '.6rem' }}>
             <h3><MapPin size={16} /> {palika.name} in {district.name}</h3>
-            <Link href={`/districts/${district.slug}`} className="text-button">District profile <ArrowRight size={13} /></Link>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem', flexWrap: 'wrap' }}>
+              <Link
+                href={`/map?lat=${mapCenter.lat}&lon=${mapCenter.lon}&zoom=11&from=${encodeURIComponent(`/districts/${district.slug}/${palika.slug}`)}`}
+                className="text-button"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '.3rem', fontSize: '.72rem', fontWeight: 650 }}
+              >
+                <Compass size={13} /> Open national map <ArrowRight size={12} />
+              </Link>
+              <Link href={`/districts/${district.slug}`} className="text-button">District profile <ArrowRight size={13} /></Link>
+            </div>
           </div>
           <div className="place-map-box">
+            <Link
+              href={`/map?lat=${mapCenter.lat}&lon=${mapCenter.lon}&zoom=11&from=${encodeURIComponent(`/districts/${district.slug}/${palika.slug}`)}`}
+              className="place-map-expand"
+              aria-label={`Expand ${palika.name} map in national map`}
+              title="Expand in national map"
+            ><Maximize2 size={16} /></Link>
             <DistrictMap
               geoSlug={provinceGeoSlug}
               districtName={district.name}
@@ -280,6 +296,8 @@ export default function PalikaPage() {
           </div>
         </section>
       )}
+
+      <GovernmentAgencyDirectory scope="palika" place={palika.name} districtName={district.name} />
 
       <p className="place-sources">
         Sources: NSO Census 2021 via BIPAD / NDRRMA · weather &amp; air quality via Open-Meteo · text and images via Wikipedia / Wikimedia Commons.

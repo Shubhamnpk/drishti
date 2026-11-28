@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import Link from 'next/link'
-import { ArrowUpRight, Banknote, Flame, HandCoins, ShieldCheck, Wind, Waves } from 'lucide-react'
+import { Activity, ArrowUpRight, Banknote, Flame, HandCoins, MapPin, PhoneCall, ShieldCheck, Wind, Waves } from 'lucide-react'
 import { BarChart, LineChart, ProgressRing } from '@/components/charts'
 import { formatNpr, formatNum } from '@/lib/currency'
 import {
@@ -11,6 +11,8 @@ import {
   type BipadBudgetActivity, type BipadFiscalYear, type BipadGeo, type BipadHazard,
   type BipadIncident, type BipadIncidentProfile, type BipadLoss, type BipadRelief,
 } from '@/lib/bipad'
+import { fetchNepalQuakes, type NepalQuake } from '@/lib/meteo'
+import { timeAgoLong } from '@/lib/time'
 
 const TH = {
   textAlign: 'left' as const, padding: '.45rem .55rem', borderBottom: '1px solid var(--border)',
@@ -71,6 +73,8 @@ export default function DisastersPage() {
   const [budget, setBudget] = useState<BipadBudgetActivity[]>([])
   const [budgetCount, setBudgetCount] = useState(0)
   const [loading, setLoading] = useState(true)
+  const [quakes, setQuakes] = useState<NepalQuake[]>([])
+  const [quakesLoading, setQuakesLoading] = useState(true)
 
   const [hazardFilter, setHazardFilter] = useState('all')
   const [verifiedOnly, setVerifiedOnly] = useState(false)
@@ -80,6 +84,11 @@ export default function DisastersPage() {
 
   useEffect(() => {
     let cancelled = false
+    void fetchNepalQuakes(12).then(rows => {
+      if (!cancelled) setQuakes(rows)
+    }).finally(() => {
+      if (!cancelled) setQuakesLoading(false)
+    })
     async function load() {
       const [p, hz, inc, rel, dist, muni, fy, bud] = await Promise.all([
         fetchBipadIncidentProfile(),
@@ -206,6 +215,7 @@ export default function DisastersPage() {
           <h1>Disaster impact, relief and recovery</h1>
           <p className="muted">Explore Nepal&apos;s official incident records, reported damage, relief distributions and local disaster-risk budgets in one place.</p>
           <nav className="disaster-hero-links" aria-label="Disaster page sections">
+            <a href="#earthquakes">Recent earthquakes <ArrowUpRight size={13} /></a>
             <a href="#incidents">Recent incidents <ArrowUpRight size={13} /></a>
             <a href="#relief">Relief records <ArrowUpRight size={13} /></a>
             <a href="#recovery">Recovery outlook <ArrowUpRight size={13} /></a>
@@ -218,6 +228,20 @@ export default function DisastersPage() {
           <p>Records are read from the government portal and refreshed hourly. Dates and missing fields follow the source.</p>
           <a href="https://bipadportal.gov.np" target="_blank" rel="noreferrer">Open BIPAD portal <ArrowUpRight size={13} /></a>
         </aside>
+      </section>
+      <section className="panel" aria-label="Disaster reporting and response" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', alignItems: 'center', gap: '1rem', marginTop: '.75rem', background: 'linear-gradient(120deg, color-mix(in srgb, var(--accent) 7%, var(--bg-elevated)), var(--bg-elevated) 64%)' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '.75rem' }}>
+          <span style={{ display: 'grid', placeItems: 'center', width: 38, height: 38, flexShrink: 0, color: 'var(--accent)', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 12 }}><PhoneCall size={18} /></span>
+          <div>
+            <p className="eyebrow" style={{ margin: '0 0 .2rem' }}>NEED TO REPORT AN EMERGENCY?</p>
+            <strong style={{ fontSize: '.9rem' }}>Contact Nepal&apos;s disaster response team</strong>
+            <p className="muted" style={{ margin: '.25rem 0 0', fontSize: '.68rem' }}>Call the NEOC toll-free line, or open BIPAD for official incident reporting and updates. Portal reporting may require sign-in.</p>
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: '.45rem', flexWrap: 'wrap' }}>
+          <a href="tel:1234" className="disaster-hero-links" style={{ margin: 0, padding: '.5rem .7rem', borderRadius: 999, background: 'var(--accent)', color: '#fff', fontWeight: 750, textDecoration: 'none', fontSize: '.7rem', alignItems: 'center' }}><PhoneCall size={13} /> Call 1234</a>
+          <a href="https://bipadportal.gov.np/" target="_blank" rel="noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '.35rem', padding: '.5rem .7rem', border: '1px solid var(--border)', borderRadius: 999, color: 'var(--text)', background: 'var(--bg)', fontWeight: 700, textDecoration: 'none', fontSize: '.7rem' }}>Open BIPAD <ArrowUpRight size={13} /></a>
+        </div>
       </section>
       {/* ── What NDRRMA recorded ── */}
       <section className="panel">
@@ -243,6 +267,38 @@ export default function DisastersPage() {
             </div>
           ))}
         </div>
+      </section>
+
+      <section id="earthquakes" className="panel" style={{ marginTop: '.75rem' }}>
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">USGS · NEPAL · PAST TWO YEARS</p>
+            <h2>Recent earthquakes</h2>
+            <p className="muted">Magnitude, place and local time help put each event in context. Open an event on the national map to explore its location.</p>
+          </div>
+          <Activity style={{ color: 'var(--warning)' }} size={20} />
+        </div>
+        {quakes.length ? (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))', gap: '.55rem', marginTop: '.85rem' }}>
+            {quakes.map(q => {
+              const date = new Date(q.time)
+              const dateLabel = date.toLocaleString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kathmandu' })
+              const layer = new URLSearchParams({ lat: String(q.coordinates[1]), lon: String(q.coordinates[0]), zoom: '8', layer: 'earthquakes', view: '2d', from: '/disasters' })
+              return (
+                <article key={q.id} style={{ display: 'grid', gridTemplateColumns: 'auto minmax(0,1fr) auto', alignItems: 'center', gap: '.65rem', padding: '.7rem', border: '1px solid var(--border-light)', borderRadius: 12, background: 'var(--bg)' }}>
+                  <strong style={{ minWidth: 54, color: q.mag >= 4.5 ? 'var(--danger)' : 'var(--warning)', fontSize: '1rem', fontVariantNumeric: 'tabular-nums' }}>M{q.mag.toFixed(1)}</strong>
+                  <div style={{ minWidth: 0 }}>
+                    <strong style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '.72rem' }}>{q.place.replace(/, Nepal$/, '')}</strong>
+                    <span className="text-secondary" style={{ display: 'block', marginTop: '.16rem', fontSize: '.62rem' }}>{timeAgoLong(q.time)} · {dateLabel} NPT</span>
+                    <span className="text-tertiary" style={{ display: 'block', marginTop: '.12rem', fontSize: '.58rem' }}>{q.depthKm != null ? `${Math.round(q.depthKm)} km deep` : 'Depth unavailable'}</span>
+                  </div>
+                  <Link href={`/map?${layer.toString()}`} aria-label={`View M${q.mag.toFixed(1)} earthquake on the national map`} title="View on national map" style={{ display: 'grid', placeItems: 'center', width: 32, height: 32, border: '1px solid var(--border)', borderRadius: 9, color: 'var(--accent)' }}><MapPin size={15} /></Link>
+                </article>
+              )
+            })}
+          </div>
+        ) : <p className="muted" style={{ marginTop: '.8rem' }}>{quakesLoading ? 'Loading recent earthquakes…' : 'No recent earthquakes were returned for Nepal.'}</p>}
+        <p className="muted" style={{ marginTop: '.6rem', fontSize: '.62rem' }}>Earthquake catalogue: USGS. Times shown in Nepal Time; event records may be revised by the source.</p>
       </section>
 
       {/* ── 16 years ── */}

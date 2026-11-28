@@ -717,6 +717,11 @@ export function StockDetail({ stock, sector, history, peers, profile, rank, fina
                     </tbody>
                   </table>
                 </div>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '.55rem' }}>
+                  <Link href={`/market/floor-sheet?symbol=${stock.symbol}`} className="text-button" style={{ padding: 0, fontSize: '.58rem' }}>
+                    Every {stock.symbol} contract this session <ExternalLink size={11} />
+                  </Link>
+                </div>
               </>
             ) : (
               <p className="muted" style={{ marginTop: '.2rem' }}>The latest floor sheet has no matched contract for this symbol.</p>

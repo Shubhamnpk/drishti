@@ -13,7 +13,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 
 ## Stack
-Next.js 16.3.3 App Router + Turbopack, React 19, TypeScript 5.7 strict (`noEmit`, `bundler` resolution, `isolatedModules`), Tailwind v4 via `@tailwindcss/postcss` + `tw-animate-css`, shadcn `base-nova` (RSC, `lucide`), `next/font` Inter.
+Next.js 16.3.3 App Router + Turbopack, React 19, TypeScript 5.7 strict (`noEmit`, `bundler` resolution, `isolatedModules`), Tailwind v4 via `@tailwindcss/postcss` + `tw-animate-css`, shadcn `base-nova` (RSC, `lucide`), `next/font` Inter. Preferred package runner: `bun`.
 
 ## Paths & aliases
 - Alias `@/*` → `./*` (not `./src/*`) — `tsconfig.json:paths`

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { Search, FolderKanban, Eye, ChevronRight, Map, X } from 'lucide-react'
+import { FolderKanban, Eye, ChevronRight, Map, X } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import { StatusBadge } from '@/components/shared'
 import { DetailDrawer } from '@/components/detail-drawer'
@@ -12,6 +12,7 @@ import { projects, slugify, parseBudgetCr, utilizationPct, PROVINCES, PROJECT_FX
 import { matchDistricts } from '@/lib/geo'
 import { fetchWbProjectCount } from '@/lib/api'
 import { formatNpr, formatNprText } from '@/lib/currency'
+import { SearchFilterBar } from '@/components/search-filter-bar'
 
 const NepalMapReal = dynamic(() => import('@/components/nepal-map-real').then(m => m.NepalMapReal), {
   ssr: false,
@@ -118,17 +119,18 @@ export default function ProjectsPage() {
           <summary>About project data and reporting dates</summary>
           <p>National Pride figures use the NPC cumulative progress report through FY 2082/83; other projects may use different reporting dates. {PROJECT_FX_NOTE} <a href={PROJECT_FX_SOURCE} target="_blank" rel="noreferrer">Rate source</a></p>
         </details>
-        <div className="projects-toolbar">
-          <label className="search projects-search">
-            <Search size={16} aria-hidden="true" />
-            <input aria-label="Search projects" placeholder="Search project, agency, location or sector" value={query} onChange={e => setQuery(e.target.value)} />
-            {query && <button type="button" aria-label="Clear search" onClick={() => setQuery('')}><X size={15} /></button>}
-          </label>
-          <select aria-label="Filter projects by sector" value={catFilter} onChange={e => setCatFilter(e.target.value as typeof catFilter)}>{CATEGORY_FILTERS.map(f => <option key={f} value={f}>{f === 'All' ? 'All sectors' : f}</option>)}</select>
-          <select aria-label="Filter projects by province" value={provinceFilter} onChange={e => selectProvince(e.target.value)}><option value="All">All provinces</option><option value="National">National</option>{PROVINCES.map(p => <option key={p} value={p}>{p}</option>)}</select>
-          <select aria-label="Sort projects" value={sort} onChange={e => setSort(e.target.value as typeof sort)}>{SORTS.map(s => <option key={s} value={s}>{s === 'Newest' ? 'Latest first' : s}</option>)}</select>
-          <button type="button" className={showMap ? 'projects-map-toggle is-active' : 'projects-map-toggle'} onClick={() => setShowMap(v => !v)} aria-expanded={showMap}><Map size={15} /> {showMap ? 'Hide map' : 'Map'}</button>
-        </div>
+        <SearchFilterBar
+          className="projects-toolbar"
+          query={query}
+          onQueryChange={setQuery}
+          placeholder="Search project, agency, location or sector"
+          filters={[
+            { id: 'project-sector', label: 'Sector', value: catFilter, onChange: value => setCatFilter(value as typeof catFilter), options: CATEGORY_FILTERS.map(value => ({ value, label: value === 'All' ? 'All sectors' : value })) },
+            { id: 'project-province', label: 'Province', value: provinceFilter, onChange: selectProvince, options: [{ value: 'All', label: 'All provinces' }, { value: 'National', label: 'National' }, ...PROVINCES.map(value => ({ value, label: value }))] },
+            { id: 'project-sort', label: 'Sort', value: sort, onChange: value => setSort(value as typeof sort), options: SORTS.map(value => ({ value, label: value === 'Newest' ? 'Latest first' : value })) },
+          ]}
+          trailing={<button type="button" className={showMap ? 'projects-map-toggle is-active' : 'projects-map-toggle'} onClick={() => setShowMap(v => !v)} aria-expanded={showMap}><Map size={15} /> {showMap ? 'Hide map' : 'Map'}</button>}
+        />
         <div className="projects-filter-row">
           <span className="projects-filter-label">Status</span>
           <div className="projects-status-filters" aria-label="Filter by status">

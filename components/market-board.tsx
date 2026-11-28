@@ -1000,6 +1000,8 @@ function filteredRows(rows: Row[], sector: string, query: string): Row[] {
 }
 
 function BrokerPanel({ brokers }: { brokers: NepseBroker[] }) {
+  const [expanded, setExpanded] = useState(false)
+  const visible = expanded ? brokers : brokers.slice(0, 8)
   return (
     <div className="panel" style={{ padding: '1rem 1.1rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '.5rem' }}>
@@ -1007,21 +1009,40 @@ function BrokerPanel({ brokers }: { brokers: NepseBroker[] }) {
           <p className="eyebrow" style={{ marginBottom: '.1rem' }}>30-day turnover</p>
           <h3 style={{ fontSize: '1rem' }}>Top brokers</h3>
         </div>
-        <Landmark size={15} style={{ color: 'var(--text-tertiary)' }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '.55rem' }}>
+          <Link href="/market/floor-sheet" className="text-button" style={{ padding: 0, fontSize: '.56rem' }}>
+            Floor sheet
+          </Link>
+          <Link href="/market/brokers" className="text-button" style={{ padding: 0, fontSize: '.56rem' }}>
+            All brokers <ArrowUpRight size={11} />
+          </Link>
+        </div>
       </div>
-      <div style={{ marginTop: '.45rem' }}>
+      <div style={{ marginTop: '.45rem', maxHeight: expanded ? 'min(380px, 46vh)' : undefined, overflowY: expanded ? 'auto' : undefined }}>
         {brokers.length === 0 && <span style={{ fontSize: '.66rem', color: 'var(--text-tertiary)' }}>Broker rankings are unavailable.</span>}
-        {brokers.slice(0, 8).map((broker, index) => (
-          <div key={broker.memberCode} style={{ display: 'grid', gridTemplateColumns: '16px minmax(0, 1fr) auto', alignItems: 'center', gap: '.45rem', padding: '.42rem .3rem', borderTop: index === 0 ? 0 : '1px solid var(--border-light)' }}>
+        {visible.map((broker, index) => (
+          <Link
+            key={broker.memberCode}
+            href={`/market/brokers/${broker.memberCode}`}
+            title={`${broker.memberName} · ${broker.latestTurnover ? `${formatNpr(broker.latestTurnover)} in the latest session` : 'no session turnover'}`}
+            style={{ display: 'grid', gridTemplateColumns: '18px minmax(0, 1fr) auto', alignItems: 'center', gap: '.45rem', padding: '.42rem .3rem', borderTop: index === 0 ? 0 : '1px solid var(--border-light)', color: 'inherit', textDecoration: 'none' }}
+          >
             <span style={{ fontSize: '.56rem', fontWeight: 700, color: 'var(--text-tertiary)' }}>{index + 1}</span>
             <span style={{ minWidth: 0, fontSize: '.66rem', fontWeight: 650, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{broker.memberName}</span>
             <strong style={{ fontSize: '.66rem', whiteSpace: 'nowrap' }}>{formatNpr(broker.turnover30d)}</strong>
-          </div>
+          </Link>
         ))}
       </div>
-      <p style={{ margin: '.45rem .3rem 0', fontSize: '.56rem', color: 'var(--text-tertiary)' }}>
-        {brokers.length > 8 ? `Top 8 of ${brokers.length} active brokers` : 'Ranked by reported 30-day turnover.'}
-      </p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '.5rem', marginTop: '.5rem' }}>
+        <p style={{ margin: '0 .3rem', fontSize: '.56rem', color: 'var(--text-tertiary)' }}>
+          {brokers.length > 8 ? (expanded ? `All ${brokers.length} active brokers` : `Top 8 of ${brokers.length} active brokers`) : 'Ranked by reported 30-day turnover.'}
+        </p>
+        {brokers.length > 8 && (
+          <button type="button" className="text-button" style={{ padding: 0, fontSize: '.58rem' }} onClick={() => setExpanded(value => !value)}>
+            {expanded ? 'Show top 8' : 'Expand'}
+          </button>
+        )}
+      </div>
     </div>
   )
 }

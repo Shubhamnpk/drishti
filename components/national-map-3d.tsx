@@ -180,14 +180,29 @@ export function NationalMap3D({ basemap, center, zoom, bounds, boundaries, admin
         }
         if (!map.getSource('atlas-boundaries')) map.addSource('atlas-boundaries', { type: 'geojson', data: { type: 'FeatureCollection', features: boundariesRef.current as never[] }, promoteId: 'id' })
         if (!map.getSource('atlas-admin-labels')) map.addSource('atlas-admin-labels', { type: 'geojson', data: { type: 'FeatureCollection', features: adminLabelsRef.current as never[] } })
-        if (!map.getSource('atlas-points')) map.addSource('atlas-points', { type: 'geojson', data: { type: 'FeatureCollection', features: pointsRef.current as never[] }, promoteId: 'id', cluster: true, clusterRadius: 42, clusterMaxZoom: 11 })
+        const splitPoints = (kind?: 'rain' | 'pm25') => pointsRef.current.filter(feature => {
+          const featureKind = feature.properties.kind
+          return kind ? featureKind === kind : featureKind !== 'rain' && featureKind !== 'pm25'
+        })
+        if (!map.getSource('atlas-points')) map.addSource('atlas-points', { type: 'geojson', data: { type: 'FeatureCollection', features: splitPoints() as never[] }, promoteId: 'id', cluster: true, clusterRadius: 42, clusterMaxZoom: 11 })
+        if (!map.getSource('atlas-rain-heat')) map.addSource('atlas-rain-heat', { type: 'geojson', data: { type: 'FeatureCollection', features: splitPoints('rain') as never[] } })
+        if (!map.getSource('atlas-pm25-heat')) map.addSource('atlas-pm25-heat', { type: 'geojson', data: { type: 'FeatureCollection', features: splitPoints('pm25') as never[] } })
         if (!map.getLayer('atlas-region-fill')) map.addLayer({ id: 'atlas-region-fill', type: 'fill', source: 'atlas-boundaries', filter: ['==', ['get', 'kind'], 'province'], paint: { 'fill-color': ['coalesce', ['get', 'color'], '#1c9b78'], 'fill-opacity': 0.09 } })
         if (!map.getLayer('atlas-region-line')) map.addLayer({ id: 'atlas-region-line', type: 'line', source: 'atlas-boundaries', paint: { 'line-color': ['coalesce', ['get', 'color'], '#0f766e'], 'line-width': ['case', ['==', ['get', 'selected'], true], 3, ['==', ['get', 'kind'], 'district'], 0.9, 1.1], 'line-opacity': ['case', ['==', ['get', 'kind'], 'district'], 0.72, 0.9] } })
         if (!map.getSource('atlas-road-tiles')) map.addSource('atlas-road-tiles', { type: 'vector', url: 'https://tiles.openfreemap.org/planet', attribution: 'OpenFreeMap · © OpenStreetMap contributors' })
-        if (!map.getLayer('atlas-road-lines')) map.addLayer({ id: 'atlas-road-lines', type: 'line', source: 'atlas-road-tiles', 'source-layer': 'transportation', minzoom: 6, layout: { visibility: roadsRef.current ? 'visible' : 'none', 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': ['match', ['get', 'class'], ['motorway', 'trunk', 'primary'], '#b45309', ['secondary', 'tertiary'], '#ca8a04', '#a8a29e'], 'line-width': ['interpolate', ['linear'], ['zoom'], 6, 0.6, 10, 1.3, 14, 2.5], 'line-opacity': 0.78 } })
+        if (!map.getLayer('atlas-road-casing')) map.addLayer({ id: 'atlas-road-casing', type: 'line', source: 'atlas-road-tiles', 'source-layer': 'transportation', minzoom: 5, layout: { visibility: roadsRef.current ? 'visible' : 'none', 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': '#fff', 'line-width': ['interpolate', ['linear'], ['zoom'], 5, 1, 8, 2.2, 12, 4, 16, 7], 'line-opacity': 0.88 } })
+        if (!map.getLayer('atlas-road-lines')) map.addLayer({ id: 'atlas-road-lines', type: 'line', source: 'atlas-road-tiles', 'source-layer': 'transportation', minzoom: 5, layout: { visibility: roadsRef.current ? 'visible' : 'none', 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': ['match', ['get', 'class'], ['motorway', 'trunk'], '#dc2626', 'primary', '#ea580c', ['secondary', 'tertiary'], '#ca8a04', '#475569'], 'line-width': ['interpolate', ['linear'], ['zoom'], 5, 0.8, 8, 1.5, 12, 2.8, 16, 5], 'line-opacity': 0.98 } })
+        if (!map.getLayer('atlas-rain-heat-layer')) map.addLayer({ id: 'atlas-rain-heat-layer', type: 'heatmap', source: 'atlas-rain-heat', maxzoom: 14, paint: { 'heatmap-weight': ['coalesce', ['get', 'intensity'], 0.1], 'heatmap-intensity': ['interpolate', ['linear'], ['zoom'], 4, 0.65, 10, 1.4], 'heatmap-radius': ['interpolate', ['linear'], ['zoom'], 4, 18, 8, 32, 12, 46], 'heatmap-opacity': 0.72, 'heatmap-color': ['interpolate', ['linear'], ['heatmap-density'], 0, 'rgba(56,189,248,0)', 0.2, '#38bdf8', 0.4, '#22c55e', 0.58, '#facc15', 0.75, '#f97316', 1, '#dc2626'] } })
+        if (!map.getLayer('atlas-pm25-heat-layer')) map.addLayer({ id: 'atlas-pm25-heat-layer', type: 'heatmap', source: 'atlas-pm25-heat', maxzoom: 14, paint: { 'heatmap-weight': ['coalesce', ['get', 'intensity'], 0.1], 'heatmap-intensity': ['interpolate', ['linear'], ['zoom'], 4, 0.7, 10, 1.5], 'heatmap-radius': ['interpolate', ['linear'], ['zoom'], 4, 20, 8, 34, 12, 48], 'heatmap-opacity': 0.76, 'heatmap-color': ['interpolate', ['linear'], ['heatmap-density'], 0, 'rgba(34,197,94,0)', 0.2, '#22c55e', 0.4, '#facc15', 0.58, '#f97316', 0.75, '#ef4444', 1, '#7e22ce'] } })
+        if (!map.getLayer('atlas-rain-point-markers')) map.addLayer({ id: 'atlas-rain-point-markers', type: 'circle', source: 'atlas-rain-heat', paint: { 'circle-color': ['coalesce', ['get', 'color'], '#38bdf8'], 'circle-radius': ['interpolate', ['linear'], ['zoom'], 4, 2.5, 10, 4.5, 14, 6], 'circle-stroke-color': '#fff', 'circle-stroke-width': 1, 'circle-opacity': 0.94 } })
+        if (!map.getLayer('atlas-pm25-point-markers')) map.addLayer({ id: 'atlas-pm25-point-markers', type: 'circle', source: 'atlas-pm25-heat', paint: { 'circle-color': ['coalesce', ['get', 'color'], '#22c55e'], 'circle-radius': ['interpolate', ['linear'], ['zoom'], 4, 2.5, 10, 4.5, 14, 6], 'circle-stroke-color': '#fff', 'circle-stroke-width': 1, 'circle-opacity': 0.94 } })
         if (!map.getLayer('atlas-clusters')) map.addLayer({ id: 'atlas-clusters', type: 'circle', source: 'atlas-points', filter: ['has', 'point_count'], paint: { 'circle-color': '#0d7c5f', 'circle-opacity': 0.9, 'circle-stroke-color': '#fff', 'circle-stroke-width': 2, 'circle-radius': ['step', ['get', 'point_count'], 15, 20, 19, 100, 23, 500, 28] } })
         if (!map.getLayer('atlas-cluster-count')) map.addLayer({ id: 'atlas-cluster-count', type: 'symbol', source: 'atlas-points', filter: ['has', 'point_count'], layout: { 'text-field': ['get', 'point_count_abbreviated'], 'text-size': 11, 'text-allow-overlap': true }, paint: { 'text-color': '#fff' } })
         if (!map.getLayer('atlas-points-layer')) map.addLayer({ id: 'atlas-points-layer', type: 'circle', source: 'atlas-points', filter: ['!', ['has', 'point_count']], paint: { 'circle-color': ['coalesce', ['get', 'color'], '#2563eb'], 'circle-radius': ['interpolate', ['linear'], ['zoom'], 5, ['coalesce', ['get', 'size'], 4], 12, ['+', ['coalesce', ['get', 'size'], 4], 2]], 'circle-stroke-color': '#fff', 'circle-stroke-width': 1.5, 'circle-opacity': 0.94 } })
+        // Keep roads legible above translucent heat layers, with station dots and
+        // the rest of the selectable feature markers rendered over the roads.
+        if (map.getLayer('atlas-road-casing') && map.getLayer('atlas-rain-point-markers')) map.moveLayer('atlas-road-casing', 'atlas-rain-point-markers')
+        if (map.getLayer('atlas-road-lines') && map.getLayer('atlas-rain-point-markers')) map.moveLayer('atlas-road-lines', 'atlas-rain-point-markers')
         if (!map.getLayer('atlas-labels')) map.addLayer({ id: 'atlas-labels', type: 'symbol', source: 'atlas-points', filter: ['!', ['has', 'point_count']], minzoom: 9, layout: { 'text-field': ['coalesce', ['get', 'label'], ''], 'text-size': 10, 'text-offset': [0, 1.2], 'text-anchor': 'top', 'text-allow-overlap': false }, paint: { 'text-color': '#17212b', 'text-halo-color': '#fff', 'text-halo-width': 1.4 } })
         if (!map.getLayer('atlas-admin-labels')) map.addLayer({ id: 'atlas-admin-labels', type: 'symbol', source: 'atlas-admin-labels', minzoom: 6, layout: { 'text-field': ['get', 'itemId'], 'text-size': ['interpolate', ['linear'], ['zoom'], 6, 9, 9, 11, 13, 13], 'text-font': ['Arial'], 'text-anchor': 'center', 'text-allow-overlap': false, 'text-ignore-placement': false, 'text-padding': 4, 'symbol-sort-key': ['case', ['==', ['get', 'selected'], true], 0, 1] }, paint: { 'text-color': ['case', ['==', ['get', 'selected'], true], '#075e49', '#183748'], 'text-halo-color': '#fff', 'text-halo-width': 2, 'text-halo-blur': 0.4 } })
         map.on('click', 'atlas-clusters', event => {
@@ -208,6 +223,17 @@ export function NationalMap3D({ basemap, center, zoom, bounds, boundaries, admin
           const label = String(f?.properties?.label ?? '')
           if (label) new maplibregl.Popup({ closeButton: true, closeOnClick: true, maxWidth: '260px' }).setLngLat(event.lngLat).setText(label).addTo(map)
         })
+        const selectIndicator = (event: MapLayerMouseEvent) => {
+          event.preventDefault()
+          const feature = event.features?.[0]
+          const kind = String(feature?.properties?.kind ?? '')
+          const id = String(feature?.properties?.itemId ?? '')
+          if (kind && id) onSelectRef.current(kind, id)
+          const label = String(feature?.properties?.label ?? '')
+          if (label) new maplibregl.Popup({ closeButton: true, closeOnClick: true, maxWidth: '260px' }).setLngLat(event.lngLat).setText(label).addTo(map)
+        }
+        map.on('click', 'atlas-rain-point-markers', selectIndicator)
+        map.on('click', 'atlas-pm25-point-markers', selectIndicator)
         map.on('click', 'atlas-region-line', (event: MapLayerMouseEvent) => {
           event.preventDefault()
           const feature = event.features?.[0]
@@ -226,6 +252,10 @@ export function NationalMap3D({ basemap, center, zoom, bounds, boundaries, admin
         map.on('mouseleave', 'atlas-admin-labels', () => { map.getCanvas().style.cursor = '' })
         map.on('mouseenter', 'atlas-points-layer', () => { map.getCanvas().style.cursor = 'pointer' })
         map.on('mouseleave', 'atlas-points-layer', () => { map.getCanvas().style.cursor = '' })
+        for (const layerId of ['atlas-rain-point-markers', 'atlas-pm25-point-markers']) {
+          map.on('mouseenter', layerId, () => { map.getCanvas().style.cursor = 'pointer' })
+          map.on('mouseleave', layerId, () => { map.getCanvas().style.cursor = '' })
+        }
         applyTiltedTerrain()
         map.resize()
       }
@@ -381,7 +411,9 @@ export function NationalMap3D({ basemap, center, zoom, bounds, boundaries, admin
 
   useEffect(() => {
     const map = mapRef.current
-    if (map?.getLayer('atlas-road-lines')) map.setLayoutProperty('atlas-road-lines', 'visibility', roadsVisible ? 'visible' : 'none')
+    for (const id of ['atlas-road-casing', 'atlas-road-lines']) {
+      if (map?.getLayer(id)) map.setLayoutProperty(id, 'visibility', roadsVisible ? 'visible' : 'none')
+    }
   }, [roadsVisible])
 
   useEffect(() => {
@@ -396,7 +428,11 @@ export function NationalMap3D({ basemap, center, zoom, bounds, boundaries, admin
 
   useEffect(() => {
     const source = mapRef.current?.getSource('atlas-points') as GeoJSONSource | undefined
-    source?.setData({ type: 'FeatureCollection', features: points as never[] })
+    source?.setData({ type: 'FeatureCollection', features: points.filter(feature => feature.properties.kind !== 'rain' && feature.properties.kind !== 'pm25') as never[] })
+    const rain = mapRef.current?.getSource('atlas-rain-heat') as GeoJSONSource | undefined
+    rain?.setData({ type: 'FeatureCollection', features: points.filter(feature => feature.properties.kind === 'rain') as never[] })
+    const pm25 = mapRef.current?.getSource('atlas-pm25-heat') as GeoJSONSource | undefined
+    pm25?.setData({ type: 'FeatureCollection', features: points.filter(feature => feature.properties.kind === 'pm25') as never[] })
   }, [points])
 
   useEffect(() => {

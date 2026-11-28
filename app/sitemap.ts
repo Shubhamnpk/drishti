@@ -22,7 +22,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date()
 
   const core = [
-    '/', '/companies', '/projects', '/economy', '/market', '/places', '/map',
+    '/', '/companies', '/projects', '/economy', '/market', '/market/brokers', '/market/floor-sheet', '/places', '/map',
     '/procurement', '/datasets', '/sources', '/environment', '/disasters', '/calendar', '/releases', '/about', '/news',
   ].map((path) => entry(path, path === '/' ? 1 : 0.8, 'daily', now))
 

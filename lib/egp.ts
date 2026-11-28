@@ -55,7 +55,7 @@ export type EgpDocument = {
   size?: number
   sha256?: string
   generated?: boolean
-  url: string
+  url?: string
 }
 
 export type EgpAmendment = {

@@ -2,10 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactElement } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import {
   Waves, CalendarDays, MapPin, ArrowLeft, Zap, Building2, Activity, History,
   AlertTriangle, CloudRain, SunMedium, Navigation, Landmark, TreePine,
-  Plus, Minus, RotateCcw, SlidersHorizontal, ChevronDown, X, Sun, Moon,
+  Plus, Minus, RotateCcw, SlidersHorizontal, ChevronDown, ChevronUp, X, Sun, Moon,
   Maximize, Minimize, Search, Layers as LayersIcon, Check,
 } from 'lucide-react'
 import { MapContainer, TileLayer, GeoJSON, CircleMarker, Marker, Popup, Tooltip, Pane, useMap } from 'react-leaflet'
@@ -19,6 +20,7 @@ import { fetchBipadDistricts, fetchDistrictPolygons, fetchLocalDistricts, distri
 import { fetchHydroProjects, hydroKind, HYDRO_KIND_COLOR, HYDRO_KIND_LABEL, type HydroProject, type HydroKind } from '@/lib/hydro'
 import { OsmRoads } from '@/components/osm-roads'
 import { fetchNepalQuakes, fetchCurrentWeather, fetchCurrentPm25, fetchHourlyTemps, fetchPm25Grid, NEPAL_PM25_GRID, type NepalQuake, type CurrentWeather } from '@/lib/meteo'
+import { timeAgoLong } from '@/lib/time'
 import { LineChart } from '@/components/charts'
 import { WeatherIcon } from '@/components/weather-icon'
 import { skyKind } from '@/lib/condition'
@@ -880,6 +882,123 @@ function MapInstanceBridge({
       onMapReadyRef.current(null)
     }
   }, [map, autoZoomPending])
+
+  useEffect(() => {
+    type SmoothZoomMap = L.Map & {
+      _moveStart: (zoomChanged: boolean, noMoveStart: boolean) => void
+      _move: (center: L.LatLng, zoom: number) => void
+      _moveEnd: (zoomChanged: boolean) => void
+      _stop: () => void
+      _panAnim?: { stop: () => void }
+    }
+    const smoothMap = map as SmoothZoomMap
+    const container = map.getContainer()
+    let animationFrame = 0
+    let gestureTimer = 0
+    let intentTimer = 0
+    let gestureActive = false
+    let zoomStarted = false
+    let targetZoom = map.getZoom()
+    let anchorPoint: L.Point | null = null
+    let anchorLatLng: L.LatLng | null = null
+
+    const finishZoom = () => {
+      if (!zoomStarted) return
+      smoothMap._moveEnd(true)
+      zoomStarted = false
+    }
+    const animateZoom = () => {
+      animationFrame = 0
+      if (!anchorPoint || !anchorLatLng) return
+      const currentZoom = map.getZoom()
+      const difference = targetZoom - currentZoom
+      if (Math.abs(difference) < 0.004) {
+        if (gestureActive) return
+        if (zoomStarted && difference !== 0) {
+          const centerPoint = map.getSize().divideBy(2)
+          const offset = anchorPoint.subtract(centerPoint)
+          const center = map.unproject(map.project(anchorLatLng, targetZoom).subtract(offset), targetZoom)
+          smoothMap._move(center, targetZoom)
+        }
+        finishZoom()
+        return
+      }
+
+      const nextZoom = currentZoom + difference * 0.24
+      const centerPoint = map.getSize().divideBy(2)
+      const offset = anchorPoint.subtract(centerPoint)
+      const center = map.unproject(map.project(anchorLatLng, nextZoom).subtract(offset), nextZoom)
+      if (!zoomStarted) {
+        smoothMap._moveStart(true, false)
+        zoomStarted = true
+      }
+      smoothMap._move(center, nextZoom)
+      if (!gestureActive && Math.abs(targetZoom - nextZoom) < 0.004) {
+        targetZoom = nextZoom
+      }
+      animationFrame = window.requestAnimationFrame(animateZoom)
+    }
+    const onTrackpadPinch = (event: WheelEvent) => {
+      // Chromium and Safari report trackpad pinches as Ctrl+wheel. Leave regular
+      // mouse-wheel events to Leaflet so their existing behavior stays unchanged.
+      if (!event.ctrlKey || event.deltaY === 0) return
+      event.preventDefault()
+      event.stopPropagation()
+      event.stopImmediatePropagation()
+
+      if (!gestureActive && !zoomStarted) {
+        smoothMap._stop()
+        smoothMap._panAnim?.stop()
+        targetZoom = map.getZoom()
+      }
+      const startsGesture = !gestureActive
+      gestureActive = true
+      if (startsGesture || !anchorPoint) anchorPoint = map.mouseEventToContainerPoint(event)
+      // Keep the same geographic point under the gesture throughout a pinch.
+      // Recomputing it on every wheel event makes the map drift as it zooms.
+      if (startsGesture || !anchorLatLng) anchorLatLng = map.containerPointToLatLng(anchorPoint)
+      const pinchDelta = Math.max(-0.35, Math.min(0.35, -event.deltaY * 0.01))
+      targetZoom = Math.max(map.getMinZoom(), Math.min(map.getMaxZoom(), targetZoom + pinchDelta))
+
+      autoZoomPending.current = true
+      window.clearTimeout(intentTimer)
+      intentTimer = window.setTimeout(() => { autoZoomPending.current = false }, 1500)
+      window.clearTimeout(gestureTimer)
+      gestureTimer = window.setTimeout(() => {
+        gestureActive = false
+        if (!animationFrame) animationFrame = window.requestAnimationFrame(animateZoom)
+      }, 140)
+      if (!animationFrame) animationFrame = window.requestAnimationFrame(animateZoom)
+    }
+
+    container.addEventListener('wheel', onTrackpadPinch, { capture: true, passive: false })
+    let coordinateAnchor: L.CircleMarker | null = null
+    const onMapClick = (event: L.LeafletMouseEvent) => {
+      if (event.originalEvent.defaultPrevented) return
+      const target = event.originalEvent.target
+      if (target instanceof HTMLElement && target.closest('.leaflet-interactive, .leaflet-marker-icon, .leaflet-popup, .leaflet-tooltip')) return
+      coordinateAnchor?.remove()
+      coordinateAnchor = L.circleMarker(event.latlng, {
+        radius: 6,
+        color: '#fff',
+        weight: 2,
+        fillColor: '#f59e0b',
+        fillOpacity: 1,
+        bubblingMouseEvents: false,
+      }).addTo(map)
+      coordinateAnchor.bindTooltip('Map anchor · ' + event.latlng.lat.toFixed(5) + ', ' + event.latlng.lng.toFixed(5), { direction: 'top', offset: [0, -7] })
+    }
+    map.on('click', onMapClick)
+    return () => {
+      container.removeEventListener('wheel', onTrackpadPinch, true)
+      map.off('click', onMapClick)
+      coordinateAnchor?.remove()
+      window.clearTimeout(gestureTimer)
+      window.clearTimeout(intentTimer)
+      if (animationFrame) window.cancelAnimationFrame(animationFrame)
+      if (zoomStarted) smoothMap._moveEnd(true)
+    }
+  }, [map, autoZoomPending])
   return null
 }
 
@@ -1063,6 +1182,25 @@ type DhmStation = {
 }
 
 export function NationalMap() {
+  const [initialMapView] = useState(() => {
+    if (typeof window === 'undefined') return null
+    const params = new URLSearchParams(window.location.search)
+    const latValue = params.get('lat')
+    const lngValue = params.get('lng') ?? params.get('lon')
+    if (!latValue || !lngValue) return null
+    const lat = Number(latValue)
+    const lng = Number(lngValue)
+    if (!Number.isFinite(lat) || !Number.isFinite(lng) || lat < -85.0511 || lat > 85.0511 || lng < -180 || lng > 180) return null
+    const zoomValue = params.get('zoom')
+    const requestedZoom = zoomValue === null || zoomValue.trim() === '' ? 11 : Number(zoomValue)
+    const layer = params.get('layer')
+    return {
+      center: { lat, lng },
+      zoom: Number.isFinite(requestedZoom) ? Math.min(22, Math.max(0, requestedZoom)) : 11,
+      quakeLayer: layer === 'earthquakes' ? 'all' : layer === 'quakes' || layer === 'quakesPast' ? layer : null,
+      mapMode: params.get('view') === '2d' ? '2d' : '3d',
+    }
+  })
   const [provinceGeo, setProvinceGeo] = useState<Record<string, unknown> | null>(null)
   const [districts, setDistricts] = useState<BipadDistrict[]>([])
   const [polyByName, setPolyByName] = useState<Record<string, Record<string, unknown>>>({})
@@ -1110,20 +1248,45 @@ export function NationalMap() {
   const [allParks, setAllParks] = useState<LocalMunicipality[]>([])
   const [munisLoading, setMunisLoading] = useState(false)
   // Weather and roads stay off on open; their data is prefetched like the rest.
-  const [layers, setLayers] = useState<Layers>({ projects: false, hydro: false, quakes: false, quakesPast: false, weather: false, incidents: false, parks: false, roads: false, rain: false, pm25: false, rivers: false, capitals: true })
+  const [layers, setLayers] = useState<Layers>(() => ({ projects: false, hydro: false, quakes: initialMapView?.quakeLayer === 'quakes' || initialMapView?.quakeLayer === 'all', quakesPast: initialMapView?.quakeLayer === 'quakesPast' || initialMapView?.quakeLayer === 'all', weather: false, incidents: false, parks: false, roads: false, rain: false, pm25: false, rivers: false, capitals: true }))
   const [parkSel, setParkSel] = useState<LocalMunicipality | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [searchFocused, setSearchFocused] = useState(false)
   const searchRef = useRef<HTMLInputElement | null>(null)
   const [quakeSel, setQuakeSel] = useState<NepalQuake | null>(null)
   const [muniSel, setMuniSel] = useState<LocalMunicipality | null>(null)
+  const router = useRouter()
   const [mapInstance, setMapInstance] = useState<L.Map | null>(null)
-  const [zoomLevel, setZoomLevel] = useState(7)
-  const [centerCoord, setCenterCoord] = useState<{ lat: number; lng: number }>({ lat: 28.4, lng: 84.2 })
+  const [zoomLevel, setZoomLevel] = useState(initialMapView?.zoom ?? 7)
+  const [centerCoord, setCenterCoord] = useState<{ lat: number; lng: number }>(initialMapView?.center ?? { lat: 28.4, lng: 84.2 })
+  const skipNextRegionFit = useRef(Boolean(initialMapView))
+
+  const handleGoBack = useCallback(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      const fromUrl = params.get('from')
+      if (fromUrl && fromUrl.startsWith('/')) {
+        router.push(fromUrl)
+        return
+      }
+
+      // Check if the user navigated from an internal relative link on our site
+      const hasInternalReferrer =
+        Boolean(document.referrer) &&
+        (document.referrer.startsWith(window.location.origin) ||
+          document.referrer.includes(window.location.host))
+
+      if (hasInternalReferrer && window.history.length > 1) {
+        router.back()
+        return
+      }
+    }
+    // Default fallback: return directly to the home page
+    router.push('/')
+  }, [router])
   const [basemap, setBasemap] = useState<BasemapKey>('satellite')
-  const [mapMode, setMapMode] = useState<'2d' | '3d'>('3d')
+  const [mapMode, setMapMode] = useState<'2d' | '3d'>(initialMapView?.mapMode ?? '3d')
   const map3dRef = useRef<MapLibreMap | null>(null)
-  const skipNextRegionFit = useRef(false)
   const autoZoomPending = useRef(false)
   const [districtQuiet, setDistrictQuiet] = useState(false)
   // The district/palika GeoJSON handlers are created when their layer mounts,
@@ -1141,6 +1304,7 @@ export function NationalMap() {
   const [gpsPosition, setGpsPosition] = useState<{ lat: number; lng: number; accuracy: number } | null>(null)
   const [gpsError, setGpsError] = useState<string | null>(null)
   const { theme, toggle: toggleTheme } = useTheme()
+
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -1284,7 +1448,7 @@ export function NationalMap() {
     if (layers.rivers) startFeed('rivers', async () => { setRiverStations(await fetchBipadRiverStationsAll()) })
     // Department of Roads blockage log: ~405 events over ~6 months, one request.
     if (layers.roads) startFeed('roads', async () => { setRoadBlocks((await fetchBipadRoadBlocks()).results) })
-    if (layers.quakes || layers.quakesPast) startFeed('quakes', async () => { setQuakes(await fetchNepalQuakes(100)) })
+    if (layers.quakes || layers.quakesPast) startFeed('quakes', async () => { setQuakes(await fetchNepalQuakes()) })
     if (layers.weather) startFeed('weather', async () => {
       const f = await fetchDhmForecast()
       setStations((f?.stations ?? []).map(s => ({
@@ -1779,11 +1943,15 @@ export function NationalMap() {
 
   // Rain and PM2.5 are both whole-country washes, so only one can be on at a time:
   // switching either on switches the other off rather than stacking two quantities.
-  const toggle = (k: keyof Layers) => setLayers(l => {
-    if (k === 'rain') return { ...l, rain: !l.rain, pm25: l.rain ? l.pm25 : false }
-    if (k === 'pm25') return { ...l, pm25: !l.pm25, rain: l.pm25 ? l.rain : false }
-    return { ...l, [k]: !l[k] }
-  })
+  const toggle = (k: keyof Layers) => {
+    // Indicator layers are temporarily supported only by the 2D renderer.
+    setMapMode('2d')
+    setLayers(l => {
+      if (k === 'rain') return { ...l, rain: !l.rain, pm25: l.rain ? l.pm25 : false }
+      if (k === 'pm25') return { ...l, pm25: !l.pm25, rain: l.pm25 ? l.rain : false }
+      return { ...l, [k]: !l[k] }
+    })
+  }
 
   /** A heat wash is up: outlines go quiet so hovering cannot restyle over the field. */
   const washOn = layers.rain || layers.pm25
@@ -1921,9 +2089,9 @@ export function NationalMap() {
 
   const atlasPoints = useMemo<Atlas3DFeature[]>(() => {
   const atlasPoints: Atlas3DFeature[] = []
-  const addPoint = (kind: string, id: string | number, name: string, lat: number, lng: number, color: string, size = 5) => {
+  const addPoint = (kind: string, id: string | number, name: string, lat: number, lng: number, color: string, size = 5, intensity?: number) => {
     if (!Number.isFinite(lat) || !Number.isFinite(lng)) return
-    atlasPoints.push({ type: 'Feature', id: `${kind}-${id}`, geometry: { type: 'Point', coordinates: [lng, lat] }, properties: { kind, itemId: String(id), label: name, color, size } })
+    atlasPoints.push({ type: 'Feature', id: `${kind}-${id}`, geometry: { type: 'Point', coordinates: [lng, lat] }, properties: { kind, itemId: String(id), label: name, color, size, ...(intensity === undefined ? {} : { intensity }) } })
   }
   if (layers.projects) for (const x of visibleProjects) addPoint('project', x.p.name, `${x.p.name} · ${x.p.status} · ${projectProgressLabel(x.p)}`, x.lat as number, x.lon as number, STATUS_COLOR[x.p.status] ?? '#0d7c5f', 5.5)
   if (layers.hydro) for (const h of visibleHydro) addPoint('hydro', h.name, `${h.name} · ${h.mw} MW · ${h.licenseType}`, h.lat, h.lng, HYDRO_KIND_COLOR[hydroKind(h.licenseType)], Math.min(9, 4 + Math.log2(Math.max(1, h.mw))))
@@ -1932,8 +2100,8 @@ export function NationalMap() {
   if (layers.weather) for (const s of visibleStations) addPoint('weather', s.id, `${s.name}${s.condition ? ` · ${s.condition}` : ''}`, s.latitude, s.longitude, '#2563eb', 5)
   if (layers.incidents) for (const i of visibleIncidents) if (i.point) addPoint('incident', i.id, `${i.title}${i.hazard != null ? ` · ${hazards[i.hazard]?.title ?? 'Incident'}` : ''}`, i.point.coordinates[1], i.point.coordinates[0], '#7c3aed', 6)
   if (layers.roads) for (const r of roadBlocks.filter(r => r.point && roadBlocked(r))) addPoint('road', r.id, `${r.roadRefno ?? 'Road'} · ${ROAD_STATUS[r.status ?? '']?.label ?? 'Blocked'} · ${r.location ?? r.title}`, r.point!.coordinates[1], r.point!.coordinates[0], ROAD_STATUS[r.status ?? '']?.color ?? '#dc2626', roadClosed(r) ? 7 : 5)
-  if (layers.rain) for (const g of rainHeat) { const rgb = rainColor(g.mm); addPoint('rain', g.id, `${g.name} · ${g.mm.toFixed(1)} mm / 24 h`, g.lat, g.lon, `rgb(${rgb.join(',')})`, 5 + Math.min(3, g.mm / 15)) }
-  if (layers.pm25) for (const p of pm25Heat) { const rgb = pm25Color(p.v); if (inScope(p.lat, p.lon)) addPoint('pm25', p.id, `Model PM2.5 · ${p.v.toFixed(1)} µg/m³`, p.lat, p.lon, `rgb(${rgb.join(',')})`, 4 + Math.min(4, p.v / 25)) }
+  if (layers.rain) for (const g of rainHeat) { const rgb = rainColor(g.mm); addPoint('rain', g.id, `${g.name} · ${g.mm.toFixed(1)} mm / 24 h`, g.lat, g.lon, `rgb(${rgb.join(',')})`, 5 + Math.min(3, g.mm / 15), Math.min(1, Math.max(0.08, g.mm / 100))) }
+  if (layers.pm25) for (const p of pm25Heat) { const rgb = pm25Color(p.v); if (inScope(p.lat, p.lon)) addPoint('pm25', p.id, `Model PM2.5 · ${p.v.toFixed(1)} µg/m³`, p.lat, p.lon, `rgb(${rgb.join(',')})`, 4 + Math.min(4, p.v / 25), Math.min(1, Math.max(0.08, p.v / 100))) }
   if (layers.rivers) for (const s of visibleRivers) { const c = stationCoord(s); if (c) addPoint('river', s.id, `${s.title} · ${s.status ?? 'River station'}`, c[0], c[1], RIVER_LEVEL_COLOR[riverLevel(s)], 6) }
   if (layers.capitals) {
     if (!province || province === 'Bagmati') addPoint('capital', 'national', 'Kathmandu · National capital', COUNTRY_CAPITAL.lat, COUNTRY_CAPITAL.lng, '#475569', 8)
@@ -1972,6 +2140,9 @@ export function NationalMap() {
       }
       return
     }
+    // The 3D indicator interactions are still being tuned; open their details
+    // in the fully supported 2D view for now.
+    setMapMode('2d')
     if (kind === 'park') { const p = displayParks.find(x => x.name === id); if (p) setParkSel(p); return }
     if (kind === 'project') { const x = projectPoints.find(x => x.p.name === id); if (x) handleSelectProject(x); return }
     if (kind === 'hydro') { const h = hydro.find(x => x.name === id); if (h) handleSelectHydro(h); return }
@@ -2329,14 +2500,15 @@ export function NationalMap() {
       <header className="atlas-topbar">
         {/* Left: Back Link & Region Selector */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-          <Link
-            href="/projects"
+          <button
+            type="button"
+            onClick={handleGoBack}
             className="atlas-topbar-pill text-accent"
-            style={{ fontSize: '.74rem', fontWeight: 700, textDecoration: 'none', padding: '5px 10px', height: 34 }}
-            title="Return to Drishti Projects Tracker"
+            style={{ fontSize: '.74rem', fontWeight: 700, padding: '5px 10px', height: 34, background: 'var(--bg-elevated)', cursor: 'pointer', border: '1px solid var(--border-light)', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+            title="Go back or return to home"
           >
-            <ArrowLeft size={14} /> Drishti
-          </Link>
+            <ArrowLeft size={14} /> Back
+          </button>
 
           <div className="atlas-view-switch" role="group" aria-label="Map dimension">
             <button type="button" onClick={() => setMapMode('2d')} aria-pressed={mapMode === '2d'}>2D</button>
@@ -3036,7 +3208,10 @@ export function NationalMap() {
             <div style={{ padding: '.5rem .6rem' }} className="bg-sunken rounded-[8px]">
               <span style={{ fontSize: '.56rem', letterSpacing: '.08em', textTransform: 'uppercase', fontWeight: 700 }} className="text-tertiary">When</span>
               <strong style={{ display: 'block', fontSize: '.76rem', marginTop: '.1rem' }}>
-                {new Date(quakeSel.time).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kathmandu' })} NPT
+                {timeAgoLong(quakeSel.time)}
+                <span style={{ display: 'block', fontSize: '.62rem', color: 'var(--text-secondary)', fontWeight: 500, marginTop: '.16rem' }}>
+                  {new Date(quakeSel.time).toLocaleString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kathmandu' })} NPT
+                </span>
               </strong>
             </div>
             <div style={{ padding: '.5rem .6rem' }} className="bg-sunken rounded-[8px]">

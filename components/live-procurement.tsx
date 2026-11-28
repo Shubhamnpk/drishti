@@ -464,25 +464,27 @@ export function LiveProcurementTable({
         </div>
       )}
 
-      {/* Search + refresh row */}
-      <div className="live-procurement-search">
-        <Search size={16} aria-hidden="true" />
-        <input
-          aria-label="Search live procurement notices"
-          placeholder="Search work, office, location, or reference..."
-          value={query}
-          onChange={event => { setQuery(event.target.value); setVisible(PAGE_SIZE) }}
-        />
-        {query && (
-          <button
-            type="button"
-            className="search-clear"
-            aria-label="Clear search"
-            onClick={() => { setQuery(''); setVisible(PAGE_SIZE) }}
-          >
-            <X size={16} />
-          </button>
-        )}
+      {/* Search, filters and refresh stay in a responsive toolbar. */}
+      <div className="live-procurement-toolbar">
+        <div className="live-procurement-search">
+          <Search size={16} aria-hidden="true" />
+          <input
+            aria-label="Search live procurement notices"
+            placeholder="Search work, office, location, or reference..."
+            value={query}
+            onChange={event => { setQuery(event.target.value); setVisible(PAGE_SIZE) }}
+          />
+          {query && (
+            <button
+              type="button"
+              className="search-clear"
+              aria-label="Clear search"
+              onClick={() => { setQuery(''); setVisible(PAGE_SIZE) }}
+            >
+              <X size={16} />
+            </button>
+          )}
+        </div>
         <div className="live-procurement-selects">
           <label><span>Status</span><select aria-label="Filter notices by status" value={statusFilter} onChange={event => { setStatusFilter(event.target.value); setVisible(PAGE_SIZE) }}>
             <option value="all">All statuses</option>
@@ -715,7 +717,7 @@ function TenderDetailContent({ detail, sourceUrl }: { detail: EgpTenderDetail; s
 
       <section style={{ marginTop: '1.1rem' }}>
         <h3 className="checklist-title">Documents ({detail.documents?.length || 0})</h3>
-        {detail.documents?.length ? <div style={{ display: 'grid', gap: '.45rem' }}>{detail.documents.map(document => <DocumentLink key={document.id} document={document} tenderId={detail.id} />)}</div> : <p className="muted" style={{ fontSize: '.7rem' }}>No public documents were listed in the detail record.</p>}
+        {detail.documents?.length ? <div style={{ display: 'grid', gap: '.45rem' }}>{detail.documents.map(document => <DocumentLink key={document.id} document={document} />)}</div> : <p className="muted" style={{ fontSize: '.7rem' }}>No public documents were listed in the detail record.</p>}
       </section>
       <p className="text-tertiary" style={{ marginTop: '1rem', fontSize: '.6rem' }}>Official e-GP data. Dates are displayed in Nepal time (NPT); the e-GP record is authoritative.</p>
     </>
@@ -732,9 +734,23 @@ function AmendmentCard({ amendment, index }: { amendment: EgpAmendment; index: n
   return <div className="bg-sunken rounded-lg" style={{ padding: '.7rem .8rem' }}><strong style={{ fontSize: '.72rem' }}>{amendment.title || label}</strong>{amendment.description && <p className="muted" style={{ fontSize: '.67rem', margin: '.25rem 0 0', lineHeight: 1.5 }}>{amendment.description}</p>}{amendment.reason && <p className="muted" style={{ fontSize: '.67rem', margin: '.25rem 0 0' }}>Reason: {amendment.reason}</p>}<p className="text-tertiary" style={{ fontSize: '.61rem', margin: '.25rem 0 0' }}>{formatNepalDate(amendment.publish_at || amendment.created_at)}</p></div>
 }
 
-function DocumentLink({ document, tenderId }: { document: EgpDocument; tenderId: string }) {
-  const href = document.url.startsWith('http') ? document.url : `https://bolpatra.gov.np${document.url.startsWith('/') ? '' : '/'}${document.url}`
+function DocumentLink({ document }: { document: EgpDocument }) {
+  const rawUrl = typeof document.url === 'string' ? document.url.trim() : ''
+  const href = rawUrl
+    ? /^https?:\/\//i.test(rawUrl) ? rawUrl : `https://bolpatra.gov.np${rawUrl.startsWith('/') ? '' : '/'}${rawUrl}`
+    : null
   const docTitle = document.title || document.kind || 'Procurement document'
+  if (!href) {
+    return (
+      <div className="bg-sunken rounded-lg" style={{ display: 'flex', alignItems: 'center', gap: '.55rem', padding: '.65rem .75rem', opacity: .75 }}>
+        <FileText size={15} className="text-tertiary" />
+        <span style={{ minWidth: 0, flex: 1 }}>
+          <strong className="text-secondary" style={{ display: 'block', fontSize: '.7rem' }}>{docTitle}</strong>
+          <small className="text-tertiary">File link not provided by the e-GP source</small>
+        </span>
+      </div>
+    )
+  }
   return (
     <a
       href={href}

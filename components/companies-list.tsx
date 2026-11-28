@@ -2,7 +2,7 @@
 
 import { Suspense, useMemo, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Search, ChevronRight, TrendingUp, TrendingDown, Minus, Eye } from 'lucide-react'
+import { ChevronRight, TrendingUp, TrendingDown, Minus, Eye } from 'lucide-react'
 import { StatusBadge } from '@/components/shared'
 import { DetailDrawer } from '@/components/detail-drawer'
 import { CompanyLogo } from '@/components/company-logo'
@@ -13,6 +13,7 @@ import { COMPANY_CATEGORIES, getCompanyCategory, type CompanyCategory } from '@/
 import { formatNprAmount } from '@/lib/nepse'
 import { formatNprOrNA } from '@/lib/currency'
 import { formatFiscalYearLabel } from '@/lib/fiscal-year'
+import { SearchFilterBar } from '@/components/search-filter-bar'
 import type { Company } from '@/lib/types'
 
 const OP_FILTERS = ['All', 'Operating', 'Closed'] as const
@@ -123,29 +124,24 @@ function CompaniesContent({ latestFinancials, nepseRanks }: { latestFinancials: 
   return (
     <div className="content-wrap">
       {/* ── Hero ── */}
-      <div className="eco-hero" style={{ background: 'linear-gradient(135deg, #0b3d33 0%, #082b24 60%, #051d18 100%)' }}>
-        <div className="eco-hero-grid">
-          <div>
-        <p style={{ fontSize: '.6rem', letterSpacing: '.16em', fontWeight: 700, opacity: .7, margin: 0 }}>STATE-OWNED COMPANIES &amp; STATUTORY PUBLIC FUNDS</p>
-        <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(1.8rem, 3.5vw, 2.8rem)', fontWeight: 500, letterSpacing: '-.04em', margin: '.3rem 0 .4rem', lineHeight: 1.05 }}>
+      <header className="companies-hero">
+        <div className="companies-hero-copy">
+        <p className="eyebrow">STATE-OWNED COMPANIES &amp; STATUTORY PUBLIC FUNDS</p>
+        <h1>
           Who runs the nation&apos;s businesses?
         </h1>
-        <p style={{ fontSize: '.82rem', opacity: .85, margin: 0, maxWidth: 560, lineHeight: 1.6 }}>
+        <p className="companies-hero-intro">
           Annual and quarterly disclosures where publicly available. Green is profit, red is loss.
           Open a company for quarters, source evidence, and audit notes.
         </p>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '.6rem', marginTop: '1.1rem', flexWrap: 'wrap' }}>
-          <span style={{ background: 'rgba(255,255,255,.14)', borderRadius: 20, padding: '.35rem .8rem', fontSize: '.7rem', fontWeight: 700 }}>
-            {filtered.length} of {companies.length} shown
-          </span>
+        <span className="companies-hero-count">{companies.length} public enterprises tracked</span>
         </div>
-          </div>
-          <aside aria-label="Aggregate annual company profit and loss" style={{ padding: '1rem 1.1rem', borderRadius: 16, background: 'rgba(0,0,0,.16)', border: '1px solid rgba(255,255,255,.12)' }}>
+          <aside className="companies-hero-result" aria-label="Aggregate annual company profit and loss">
             <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ margin: 0, fontSize: '.58rem', letterSpacing: '.14em', fontWeight: 700, opacity: .68 }}>LATEST ANNUAL RESULTS</p>
-              <strong style={{ display: 'block', fontSize: '1.7rem', lineHeight: 1.15, marginTop: '.3rem', color: annualNetTotal >= 0 ? '#86efac' : '#fca5a5' }}>{formatNprAmount(annualNetTotal)}</strong>
-              <span style={{ display: 'block', fontSize: '.62rem', opacity: .72, marginTop: '.15rem' }}>Combined net result across available annual figures</span>
-              <div style={{ display: 'grid', gap: '.45rem', marginTop: '.8rem', fontSize: '.68rem' }}>
+              <p className="companies-hero-result-label">LATEST ANNUAL RESULTS</p>
+              <strong className="companies-hero-total" style={{ color: annualNetTotal >= 0 ? '#86efac' : '#fca5a5' }}>{formatNprAmount(annualNetTotal)}</strong>
+              <span className="companies-hero-result-note">Combined net result across available annual figures</span>
+              <div className="companies-hero-result-breakdown">
                 <span style={{ display: 'flex', justifyContent: 'space-between', gap: '.5rem' }}><span>Profit total</span><strong style={{ color: '#86efac' }}>{formatNprAmount(annualProfitTotal)}</strong></span>
                 <span style={{ display: 'flex', justifyContent: 'space-between', gap: '.5rem' }}><span>Loss total</span><strong style={{ color: '#fca5a5' }}>{formatNprAmount(annualLossTotal)}</strong></span>
               </div>
@@ -153,69 +149,25 @@ function CompaniesContent({ latestFinancials, nepseRanks }: { latestFinancials: 
                 <span style={{ width: `${profitMagnitudePct}%`, background: '#4ade80' }} />
                 <span style={{ flex: 1, background: '#f87171' }} />
               </div>
-              <p style={{ margin: '.5rem 0 0', fontSize: '.57rem', lineHeight: 1.45, opacity: .68 }}>{annualReportedCount} of {companies.length} companies · latest available annual figures; fiscal years vary</p>
+              <p className="companies-hero-result-footnote">{annualReportedCount} of {companies.length} companies · latest available annual figures; fiscal years vary</p>
             </div>
           </aside>
-        </div>
-      </div>
+      </header>
 
       <section className="full-panel panel">
-        <div style={{ display: 'flex', gap: '.75rem', alignItems: 'center', flexWrap: 'wrap', marginTop: '.75rem' }}>
-          <label className="search" style={{ maxWidth: '280px' }}>
-            <Search size={16} />
-            <input
-              aria-label="Search companies"
-              placeholder="Search by name or category..."
-              value={query}
-              onChange={e => setQuery(e.target.value)}
-            />
-          </label>
-          {query && (
-            <button
-              onClick={() => setQuery('')}
-              className="text-primary bg-primary-50 rounded-[6px]"
-              style={{
-                fontSize: '.72rem',
-                fontWeight: 600,
-                padding: '.3rem .55rem',
-              }}
-            >
-              Clear
-            </button>
-          )}
-          <span className="muted" style={{ marginLeft: 'auto', fontSize: '.68rem' }}>
-            Click a heading for ascending, descending, then company-name order
-          </span>
-        </div>
-
-        <div className="quarter-tabs" style={{ marginTop: '.6rem', flexWrap: 'wrap' }}>
-          {OP_FILTERS.map(f => (
-            <button key={f} className={opFilter === f ? 'selected' : ''} onClick={() => setOpFilter(f)}>
-              {f}
-              {f !== 'All' && ` (${companies.filter(c => c.operatingStatus === f).length})`}
-            </button>
-          ))}
-        </div>
-
-        <div className="quarter-tabs" style={{ marginTop: '.4rem', flexWrap: 'wrap' }}>
-          <button className={categoryFilter === 'All' ? 'selected' : ''} onClick={() => setCategoryFilter('All')}>
-            All categories
-          </button>
-          {COMPANY_CATEGORIES.map(category => (
-            <button key={category} className={categoryFilter === category ? 'selected' : ''} onClick={() => setCategoryFilter(category)}>
-              {category}
-            </button>
-          ))}
-        </div>
-
-        <div className="quarter-tabs" style={{ marginTop: '.4rem', flexWrap: 'wrap' }} aria-label="Filter by net result">
-          {RESULT_FILTERS.map(filter => (
-            <button key={filter} className={resultFilter === filter ? 'selected' : ''} onClick={() => setResultFilter(filter)}>
-              {filter}
-              {filter !== 'All results' && ` (${companies.filter(c => getResultType(c, latestFinancials[c.name]) === ({ Profit: 'up', Loss: 'down', Unreported: 'unknown' } as const)[filter]).length})`}
-            </button>
-          ))}
-        </div>
+        <SearchFilterBar
+          query={query}
+          onQueryChange={setQuery}
+          placeholder="Search companies, sectors or ministries"
+          filters={[
+            { id: 'operating-status', label: 'Operating status', value: opFilter, onChange: value => setOpFilter(value as typeof opFilter), options: OP_FILTERS.map(value => ({ value, label: value === 'All' ? 'All statuses' : `${value} (${companies.filter(c => c.operatingStatus === value).length})` })) },
+            { id: 'company-category', label: 'Category', value: categoryFilter, onChange: value => setCategoryFilter(value as typeof categoryFilter), options: [{ value: 'All', label: 'All categories' }, ...COMPANY_CATEGORIES.map(value => ({ value, label: value }))] },
+            { id: 'company-results', label: 'Net result', value: resultFilter, onChange: value => setResultFilter(value as typeof resultFilter), options: RESULT_FILTERS.map(value => ({ value, label: value })) },
+          ]}
+          hasActiveFilters={Boolean(query.trim()) || opFilter !== 'All' || categoryFilter !== 'All' || resultFilter !== 'All results'}
+          onClear={() => { setQuery(''); setOpFilter('All'); setCategoryFilter('All'); setResultFilter('All results') }}
+        />
+        <p className="companies-sort-hint">{filtered.length} of {companies.length} companies · Click a table heading to sort</p>
 
         {filtered.length === 0 ? (
           <div

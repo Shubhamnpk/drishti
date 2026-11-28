@@ -45,12 +45,7 @@ const numOrNull = (v: unknown): number | null => {
 
 let dividendCache: Promise<NepseDividendRecord[]> | null = null
 let disclosureCache: Promise<NepseDisclosure[]> | null = null
-let floorSheetCache: Promise<{
-  date: string
-  stocks: Record<string, { symbol?: string; name?: string }>
-  brokers: Record<string, string>
-  day: { transactions?: unknown[][] }
-} | null> | null = null
+let floorSheetCache: Promise<FloorSheetBundle | null> | null = null
 
 export async function fetchNepseStocks(): Promise<NepseStock[]> {
   const raw = await fetchJson<Record<string, unknown>[]>(`${BASE_URL}/nepse_data.json`, MARKET_REVALIDATE_SECONDS)
@@ -145,20 +140,59 @@ export async function fetchNepseSectorMap(): Promise<Record<string, string>> {
   return map
 }
 
-export type NepseBroker = { memberCode: number; memberName: string; turnover30d: number; latestTurnover: number }
+export type NepseBrokerRating = {
+  averageRating: number
+  totalRatings: number
+  averageShareTransferDays: number | null
+  averageCashDepositDays: number | null
+}
+
+export type NepseBroker = {
+  memberCode: number
+  memberName: string
+  turnover30d: number
+  latestTurnover: number
+  membershipType: string
+  phone: string
+  districts: string[]
+  branchCount: number
+  tmsLink: string
+  isDealer: boolean
+  imageUrl?: string
+  rating: NepseBrokerRating | null
+}
 
 /** Broker turnover rankings from the YONepse mirror. */
 export async function fetchNepseTopBrokers(): Promise<NepseBroker[]> {
   const payload = await fetchJson<Record<string, unknown>[] | { value?: Record<string, unknown>[] }>(`${BASE_URL}/other/brokers.json`)
   const rows = Array.isArray(payload) ? payload : payload?.value ?? []
   return rows
-    .filter(row => row.activeStatus === 'A' && Number(row.thirtyDaysTurnover) > 0)
-    .map(row => ({
-      memberCode: Number(row.memberCode ?? 0),
-      memberName: String(row.memberName ?? 'Unknown broker'),
-      turnover30d: Number(row.thirtyDaysTurnover ?? 0),
-      latestTurnover: Number(row.latestTurnover ?? 0),
-    }))
+    .filter(row => row.activeStatus === 'A')
+    .map(row => {
+      const rating = row.rating && typeof row.rating === 'object' ? row.rating as Record<string, unknown> : null
+      const averageRating = Number(rating?.averageRating ?? 0)
+      return {
+        memberCode: Number(row.memberCode ?? 0),
+        memberName: String(row.memberName ?? 'Unknown broker'),
+        turnover30d: Number(row.thirtyDaysTurnover ?? 0),
+        latestTurnover: Number(row.latestTurnover ?? 0),
+        membershipType: String(row.membershipType ?? ''),
+        phone: String(row.phone ?? ''),
+        districts: Array.isArray(row.districts) ? row.districts.map(String) : [],
+        branchCount: Number(row.branchCount ?? 0),
+        tmsLink: String(row.tmsLink ?? ''),
+        isDealer: row.isDealer === 'Y',
+        imageUrl: typeof row.imageUrl === 'string' && row.imageUrl ? row.imageUrl : undefined,
+        rating: averageRating > 0
+          ? {
+            averageRating,
+            totalRatings: Number(rating?.totalRatings ?? 0),
+            averageShareTransferDays: numOrNull(rating?.averageShareTransferDays),
+            averageCashDepositDays: numOrNull(rating?.averageCashDepositDays),
+          }
+          : null,
+      }
+    })
     .sort((a, b) => b.turnover30d - a.turnover30d)
 }
 
@@ -484,8 +518,20 @@ export async function fetchNepseDisclosures(): Promise<NepseDisclosure[]> {
   return disclosureCache
 }
 
-/** Per-symbol floor-sheet summary from the latest trading session. */
-export async function fetchNepseFloorSheetSummary(symbol: string): Promise<NepseFloorSheetSummary | null> {
+type FloorSheetBundle = {
+  date: string
+  stocks: Record<string, { symbol?: string; name?: string }>
+  brokers: Record<string, string>
+  day: {
+    transactions?: unknown[][]
+    totalAmount?: number
+    totalQty?: number
+    totalTrades?: number
+  }
+}
+
+/** One shared download of the latest session: manifest, lookups and the daily shard. */
+function floorSheetBundle(): Promise<FloorSheetBundle | null> {
   if (!floorSheetCache) {
     floorSheetCache = (async () => {
       const man = await fetchJson<{ latestDate?: string; availableDates?: string[] }>(`${BASE_URL}/floor_sheet/manifest.json`)
@@ -494,14 +540,18 @@ export async function fetchNepseFloorSheetSummary(symbol: string): Promise<Nepse
       const [stocks, brokers, day] = await Promise.all([
         fetchJson<Record<string, { symbol?: string; name?: string }>>(`${BASE_URL}/floor_sheet/lookups/stocks.json`),
         fetchJson<Record<string, string>>(`${BASE_URL}/floor_sheet/lookups/brokers.json`),
-        fetchJson<{ transactions?: unknown[][] }>(`${BASE_URL}/floor_sheet/daily/${date}.json`),
+        fetchJson<FloorSheetBundle['day']>(`${BASE_URL}/floor_sheet/daily/${date}.json`),
       ])
       if (!stocks || !brokers || !day) return null
       return { date, stocks, brokers, day }
     })()
   }
+  return floorSheetCache
+}
 
-  const bundle = await floorSheetCache
+/** Per-symbol floor-sheet summary from the latest trading session. */
+export async function fetchNepseFloorSheetSummary(symbol: string): Promise<NepseFloorSheetSummary | null> {
+  const bundle = await floorSheetBundle()
   if (!bundle) return null
 
   const wanted = symbol.toUpperCase()
@@ -556,6 +606,356 @@ export async function fetchNepseFloorSheetSummary(symbol: string): Promise<Nepse
     buyers: rank(buyers),
     sellers: rank(sellers),
     largest: [...trades].sort((a, b) => b.amount - a.amount).slice(0, 5),
+  }
+}
+
+export type NepseBrokerStockFlow = {
+  symbol: string
+  companyName: string
+  buyAmount: number
+  sellAmount: number
+  buyQty: number
+  sellQty: number
+  contracts: number
+}
+
+export type NepseBrokerContract = {
+  time: string
+  symbol: string
+  side: 'buy' | 'sell'
+  qty: number
+  rate: number
+  amount: number
+  counterparty: string
+}
+
+export type NepseBrokerActivity = {
+  date: string
+  contracts: number
+  buyAmount: number
+  sellAmount: number
+  buyQty: number
+  sellQty: number
+  netAmount: number
+  marketAmount: number
+  shareOfMarket: number
+  buyShare: number
+  sellShare: number
+  sessionRank: { byTurnover: number; of: number } | null
+  symbols: NepseBrokerStockFlow[]
+  largest: NepseBrokerContract[]
+}
+
+/**
+ * One broker's latest-session footprint, rebuilt from the daily floor sheet:
+ * gross buy and sell value, net position, the symbols it touched and the
+ * session rank across every active counterparty. Returns null when the mirror
+ * has no floor sheet for the day or the broker did not trade.
+ */
+export async function fetchNepseBrokerActivity(memberCode: number): Promise<NepseBrokerActivity | null> {
+  const bundle = await floorSheetBundle()
+  if (!bundle) return null
+
+  const code = String(memberCode)
+  const transactions = bundle.day.transactions ?? []
+  const symbolFlow = new Map<string, NepseBrokerStockFlow>()
+  const largest: NepseBrokerContract[] = []
+  const totals = new Map<string, number>()
+  let contracts = 0
+  let buyAmount = 0
+  let sellAmount = 0
+  let buyQty = 0
+  let sellQty = 0
+  let marketAmount = 0
+
+  const flow = (stockId: string): NepseBrokerStockFlow => {
+    const lookup = bundle.stocks[stockId]
+    const symbol = String(lookup?.symbol ?? stockId)
+    const entry = symbolFlow.get(symbol) ?? {
+      symbol,
+      companyName: String(lookup?.name ?? symbol),
+      buyAmount: 0,
+      sellAmount: 0,
+      buyQty: 0,
+      sellQty: 0,
+      contracts: 0,
+    }
+    symbolFlow.set(symbol, entry)
+    return entry
+  }
+
+  for (const raw of transactions) {
+    if (!Array.isArray(raw)) continue
+    const amount = Number(raw[6] ?? 0)
+    const buyer = String(raw[2])
+    const seller = String(raw[3])
+    marketAmount += amount
+    totals.set(buyer, (totals.get(buyer) ?? 0) + amount)
+    totals.set(seller, (totals.get(seller) ?? 0) + amount)
+    if (buyer !== code && seller !== code) continue
+
+    const stockId = String(raw[1])
+    const qty = Number(raw[4] ?? 0)
+    const rate = Number(raw[5] ?? 0)
+    const time = String(raw[7] ?? '')
+    const entry = flow(stockId)
+    entry.contracts += 1
+    contracts += 1
+
+    if (buyer === code) {
+      buyAmount += amount
+      buyQty += qty
+      entry.buyAmount += amount
+      entry.buyQty += qty
+    }
+    if (seller === code) {
+      sellAmount += amount
+      sellQty += qty
+      entry.sellAmount += amount
+      entry.sellQty += qty
+    }
+
+    largest.push({
+      time,
+      symbol: entry.symbol,
+      side: buyer === code ? 'buy' : 'sell',
+      qty,
+      rate,
+      amount,
+      counterparty: bundle.brokers[buyer === code ? seller : buyer] ?? `Broker ${buyer === code ? seller : buyer}`,
+    })
+  }
+
+  if (!contracts) return null
+
+  const ordered = [...totals.entries()].sort((a, b) => b[1] - a[1])
+  const rankIndex = ordered.findIndex(([key]) => key === code)
+  const brokerTotal = buyAmount + sellAmount
+
+  return {
+    date: bundle.date,
+    contracts,
+    buyAmount,
+    sellAmount,
+    buyQty,
+    sellQty,
+    netAmount: buyAmount - sellAmount,
+    marketAmount,
+    // Gross value handled (buy plus sell) as a share of one-sided market
+    // turnover, matching how the exchange quotes a member's turnover share.
+    shareOfMarket: marketAmount > 0 ? (brokerTotal / (marketAmount * 2)) * 100 : 0,
+    buyShare: brokerTotal > 0 ? (buyAmount / brokerTotal) * 100 : 0,
+    sellShare: brokerTotal > 0 ? (sellAmount / brokerTotal) * 100 : 0,
+    sessionRank: rankIndex >= 0 ? { byTurnover: rankIndex + 1, of: ordered.length } : null,
+    symbols: [...symbolFlow.values()].sort((a, b) => (b.buyAmount + b.sellAmount) - (a.buyAmount + a.sellAmount)),
+    largest: largest.sort((a, b) => b.amount - a.amount).slice(0, 8),
+  }
+}
+
+export type NepseFloorSheetSymbol = { symbol: string; companyName: string; amount: number; qty: number; contracts: number }
+export type NepseFloorSheetMember = { code: number; name: string; buyAmount: number; sellAmount: number; amount: number; contracts: number }
+export type NepseFloorSheetHour = { hour: string; contracts: number; amount: number }
+
+export type NepseFloorSheetOverview = {
+  date: string
+  contracts: number
+  amount: number
+  qty: number
+  averageTicket: number
+  largest: number
+  brokerCount: number
+  symbolCount: number
+  symbols: NepseFloorSheetSymbol[]
+  members: NepseFloorSheetMember[]
+  hours: NepseFloorSheetHour[]
+}
+
+/** Whole-session aggregates from the latest floor sheet: symbols, members and hourly rhythm. */
+export async function fetchNepseFloorSheetOverview(): Promise<NepseFloorSheetOverview | null> {
+  const bundle = await floorSheetBundle()
+  if (!bundle) return null
+
+  const symbols = new Map<string, NepseFloorSheetSymbol>()
+  const members = new Map<number, NepseFloorSheetMember>()
+  const hours = new Map<string, NepseFloorSheetHour>()
+  let contracts = 0
+  let amount = 0
+  let qty = 0
+  let largest = 0
+
+  const symbolEntry = (stockId: string): NepseFloorSheetSymbol => {
+    const lookup = bundle.stocks[stockId]
+    const symbol = String(lookup?.symbol ?? stockId)
+    let entry = symbols.get(symbol)
+    if (!entry) {
+      entry = { symbol, companyName: String(lookup?.name ?? symbol), amount: 0, qty: 0, contracts: 0 }
+      symbols.set(symbol, entry)
+    }
+    return entry
+  }
+
+  const memberEntry = (code: number): NepseFloorSheetMember => {
+    let entry = members.get(code)
+    if (!entry) {
+      entry = {
+        code,
+        name: bundle.brokers[String(code)] ?? `Broker ${code}`,
+        buyAmount: 0,
+        sellAmount: 0,
+        amount: 0,
+        contracts: 0,
+      }
+      members.set(code, entry)
+    }
+    return entry
+  }
+
+  for (const raw of bundle.day.transactions ?? []) {
+    if (!Array.isArray(raw)) continue
+    const value = Number(raw[6] ?? 0)
+    const shares = Number(raw[4] ?? 0)
+    const hour = `${String(raw[7] ?? '').slice(0, 2)}:00`
+    contracts += 1
+    amount += value
+    qty += shares
+    if (value > largest) largest = value
+
+    const entry = symbolEntry(String(raw[1]))
+    entry.amount += value
+    entry.qty += shares
+    entry.contracts += 1
+
+    const buyer = memberEntry(Number(raw[2]))
+    buyer.buyAmount += value
+    buyer.amount += value
+    buyer.contracts += 1
+    const seller = memberEntry(Number(raw[3]))
+    seller.sellAmount += value
+    seller.amount += value
+    seller.contracts += 1
+
+    const hourEntry = hours.get(hour) ?? { hour, contracts: 0, amount: 0 }
+    hourEntry.contracts += 1
+    hourEntry.amount += value
+    hours.set(hour, hourEntry)
+  }
+
+  return {
+    date: bundle.date,
+    contracts,
+    amount,
+    qty,
+    averageTicket: contracts ? amount / contracts : 0,
+    largest,
+    brokerCount: members.size,
+    symbolCount: symbols.size,
+    symbols: [...symbols.values()].sort((a, b) => b.amount - a.amount).slice(0, 12),
+    members: [...members.values()].sort((a, b) => b.amount - a.amount).slice(0, 12),
+    hours: [...hours.values()].sort((a, b) => a.hour.localeCompare(b.hour)),
+  }
+}
+
+export type NepseFloorSheetContract = {
+  time: string
+  symbol: string
+  companyName: string
+  buyer: number
+  buyerName: string
+  seller: number
+  sellerName: string
+  qty: number
+  rate: number
+  amount: number
+}
+
+export type NepseFloorSheetSort = 'amount' | 'time' | 'qty'
+
+export type NepseFloorSheetPage = {
+  date: string
+  total: number
+  matched: number
+  matchedAmount: number
+  page: number
+  pageSize: number
+  pages: number
+  contracts: NepseFloorSheetContract[]
+}
+
+/**
+ * Filtered, sorted page of the latest floor sheet. Works on the raw transaction
+ * tuples and only materialises the requested page, so a full-day scan stays cheap.
+ */
+export async function fetchNepseFloorSheetPage(query: {
+  symbol?: string
+  broker?: number
+  minAmount?: number
+  sort?: NepseFloorSheetSort
+  page?: number
+  pageSize?: number
+} = {}): Promise<NepseFloorSheetPage | null> {
+  const bundle = await floorSheetBundle()
+  if (!bundle) return null
+
+  const symbol = query.symbol?.trim().toUpperCase() ?? ''
+  const broker = query.broker && query.broker > 0 ? query.broker : null
+  const minAmount = query.minAmount && query.minAmount > 0 ? query.minAmount : 0
+  const sort = query.sort ?? 'amount'
+  const pageSize = Math.min(200, Math.max(10, query.pageSize ?? 50))
+  const total = bundle.day.transactions?.length ?? 0
+
+  const stockIds = symbol
+    ? new Set(Object.keys(bundle.stocks).filter(key => String(bundle.stocks[key]?.symbol ?? '').toUpperCase() === symbol))
+    : null
+  if (stockIds && stockIds.size === 0) {
+    return { date: bundle.date, total, matched: 0, matchedAmount: 0, page: 1, pageSize, pages: 0, contracts: [] }
+  }
+
+  const hits: unknown[][] = []
+  let matchedAmount = 0
+  for (const raw of bundle.day.transactions ?? []) {
+    if (!Array.isArray(raw)) continue
+    const value = Number(raw[6] ?? 0)
+    if (minAmount && value < minAmount) continue
+    if (stockIds && !stockIds.has(String(raw[1]))) continue
+    if (broker != null && Number(raw[2]) !== broker && Number(raw[3]) !== broker) continue
+    hits.push(raw)
+    matchedAmount += value
+  }
+
+  if (sort === 'time') hits.sort((a, b) => String(b[7] ?? '').localeCompare(String(a[7] ?? '')))
+  else if (sort === 'qty') hits.sort((a, b) => Number(b[4] ?? 0) - Number(a[4] ?? 0))
+  else hits.sort((a, b) => Number(b[6] ?? 0) - Number(a[6] ?? 0))
+
+  const pages = Math.ceil(hits.length / pageSize)
+  const page = Math.min(Math.max(1, query.page ?? 1), Math.max(1, pages))
+  const start = (page - 1) * pageSize
+
+  return {
+    date: bundle.date,
+    total,
+    matched: hits.length,
+    matchedAmount,
+    page,
+    pageSize,
+    pages,
+    contracts: hits.slice(start, start + pageSize).map(raw => {
+      const stockId = String(raw[1])
+      const buyer = Number(raw[2] ?? 0)
+      const seller = Number(raw[3] ?? 0)
+      const lookup = bundle.stocks[stockId]
+      return {
+        time: String(raw[7] ?? ''),
+        symbol: String(lookup?.symbol ?? stockId),
+        companyName: String(lookup?.name ?? ''),
+        buyer,
+        buyerName: bundle.brokers[String(buyer)] ?? `Broker ${buyer}`,
+        seller,
+        sellerName: bundle.brokers[String(seller)] ?? `Broker ${seller}`,
+        qty: Number(raw[4] ?? 0),
+        rate: Number(raw[5] ?? 0),
+        amount: Number(raw[6] ?? 0),
+      }
+    }),
   }
 }
 

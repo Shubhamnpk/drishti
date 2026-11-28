@@ -55,7 +55,7 @@ export default async function MarketPage() {
       ipos={ipos}
       dividends={dividends.slice(0, 6)}
       disclosures={disclosures.slice(0, 6)}
-      brokers={brokers.slice(0, 8)}
+      brokers={brokers}
     />
   )
 }

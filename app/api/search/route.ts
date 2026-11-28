@@ -3,6 +3,7 @@ import { cdnCache } from '@/lib/cache'
 import { searchDatasets } from '@/lib/opendatanepal'
 import { fetchNepseStocks } from '@/lib/nepse'
 import { formatNpr } from '@/lib/currency'
+import { searchGovernmentAgencies } from '@/lib/government-agencies'
 
 // GET only, cacheable: results are per-query-key, so the CDN stores one entry
 // per `?q=`. Stock prices go stale in hours anyway; dropping `force-dynamic`
@@ -11,7 +12,7 @@ import { formatNpr } from '@/lib/currency'
 
 type SearchHit = {
   id: string
-  kind: 'stock' | 'dataset'
+  kind: 'stock' | 'dataset' | 'agency'
   label: string
   sub: string
   href: string
@@ -75,7 +76,15 @@ export async function GET(request: Request) {
     external: true,
   }))
 
-  return NextResponse.json({ hits: [...stockHits, ...datasetHits] }, {
+  const agencyHits: SearchHit[] = searchGovernmentAgencies(query, 6).map(agency => ({
+    id: `agency:${agency.id}`,
+    kind: 'agency',
+    label: `${agency.name}${agency.acronym ? ` (${agency.acronym})` : ''}`,
+    sub: `${agency.categoryLabel} · ${agency.address}`,
+    href: `/agencies?q=${encodeURIComponent(agency.acronym || agency.name)}`,
+  }))
+
+  return NextResponse.json({ hits: [...agencyHits, ...stockHits, ...datasetHits] }, {
     headers: cdnCache(600),
   })
 }

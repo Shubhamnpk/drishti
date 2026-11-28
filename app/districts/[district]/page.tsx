@@ -5,7 +5,7 @@ import dynamic from 'next/dynamic'
 import { useParams } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
 import {
-  ArrowLeft, ArrowRight, BookOpen, Cloud, ExternalLink, GraduationCap, Home, MapPin, Mountain, Users,
+  ArrowLeft, ArrowRight, BookOpen, Cloud, Compass, ExternalLink, GraduationCap, Home, MapPin, Maximize2, Mountain, Users,
 } from 'lucide-react'
 import {
   KIND_LABEL, KIND_ORDER, fetchDailyForecast, fetchDistrictGeoMeta, fetchDistrictPalikaCensus,
@@ -19,6 +19,7 @@ import { fetchBipadDistrictProfile, type DistrictProfile, type PalikaCensus } fr
 import { fetchCurrentWeather, fetchCurrentPm25, type CurrentWeather } from '@/lib/meteo'
 import { skyKind, pm25Band } from '@/lib/condition'
 import { WeatherIcon } from '@/components/weather-icon'
+import { GovernmentAgencyDirectory } from '@/components/government-agency-directory'
 
 const DistrictMap = dynamic(() => import('@/components/district-map').then(m => m.DistrictMap), { ssr: false })
 
@@ -244,13 +245,17 @@ export default function DistrictPage() {
                 return (
                   <div key={b.band} className="age-pyramid-row">
                     <span className="age-pyramid-side age-pyramid-left">
-                      <span className="age-pyramid-value">{nf.format(b.male)} <small>({maleShare.toFixed(1)}%)</small></span>
-                      <span className="age-pyramid-track"><span className="age-pyramid-bar age-male" style={{ width: `${(b.male / ageMax) * 100}%` }} /></span>
+                      <span className="age-pyramid-track" title={`${b.band} male: ${nf.format(b.male)} people (${maleShare.toFixed(1)}% of this age band)`}>
+                        <span className="age-pyramid-bar age-male" style={{ width: `${(b.male / ageMax) * 100}%` }} />
+                        <span className="age-pyramid-value">{nf.format(b.male)} <small>{maleShare.toFixed(1)}%</small></span>
+                      </span>
                     </span>
                     <span className="age-pyramid-label">{b.band}</span>
                     <span className="age-pyramid-side">
-                      <span className="age-pyramid-track"><span className="age-pyramid-bar age-female" style={{ width: `${(b.female / ageMax) * 100}%` }} /></span>
-                      <span className="age-pyramid-value">{nf.format(b.female)} <small>({femaleShare.toFixed(1)}%)</small></span>
+                      <span className="age-pyramid-track" title={`${b.band} female: ${nf.format(b.female)} people (${femaleShare.toFixed(1)}% of this age band)`}>
+                        <span className="age-pyramid-bar age-female" style={{ width: `${(b.female / ageMax) * 100}%` }} />
+                        <span className="age-pyramid-value">{nf.format(b.female)} <small>{femaleShare.toFixed(1)}%</small></span>
+                      </span>
                     </span>
                   </div>
                 )
@@ -269,9 +274,24 @@ export default function DistrictPage() {
         <section className="place-map-section">
           <div className="panel-head" style={{ marginBottom: '.6rem' }}>
             <h3><MapPin size={16} /> {district.name} in {province}</h3>
-            {provinceSlug && <Link href={`/provinces/${provinceSlug}`} className="text-button">Province profile <ArrowRight size={13} /></Link>}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem', flexWrap: 'wrap' }}>
+              <Link
+                href={`/map?lat=${coords.lat}&lon=${coords.lon}&zoom=10&from=${encodeURIComponent(`/districts/${district.slug}`)}`}
+                className="text-button"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '.3rem', fontSize: '.72rem', fontWeight: 650 }}
+              >
+                <Compass size={13} /> Open national map <ArrowRight size={12} />
+              </Link>
+              {provinceSlug && <Link href={`/provinces/${provinceSlug}`} className="text-button">Province profile <ArrowRight size={13} /></Link>}
+            </div>
           </div>
           <div className="place-map-box">
+            <Link
+              href={`/map?lat=${coords.lat}&lon=${coords.lon}&zoom=10&from=${encodeURIComponent(`/districts/${district.slug}`)}`}
+              className="place-map-expand"
+              aria-label={`Expand ${district.name} map in national map`}
+              title="Expand in national map"
+            ><Maximize2 size={16} /></Link>
             <DistrictMap
               geoSlug={provinceGeoSlug}
               districtName={district.name}
@@ -335,6 +355,8 @@ export default function DistrictPage() {
           </div>
         </section>
       )}
+
+      <GovernmentAgencyDirectory scope="district" place={district.name} />
 
       <p className="place-sources">
         Sources: NSO Census 2021 via BIPAD / NDRRMA · area &amp; names via DataNepal (COD) · weather &amp; air quality via Open-Meteo ·

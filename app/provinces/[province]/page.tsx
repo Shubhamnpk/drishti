@@ -5,8 +5,8 @@ import dynamic from 'next/dynamic'
 import { useParams } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
 import {
-  ArrowLeft, ArrowRight, BookOpen, Building2, ChevronDown, Cloud, ExternalLink, GraduationCap, Home,
-  MapPin, Mountain, Users,
+  ArrowLeft, ArrowRight, BookOpen, Building2, ChevronDown, Cloud, Compass, ExternalLink, GraduationCap, Home,
+  MapPin, Maximize2, Mountain, Users,
 } from 'lucide-react'
 import { DISTRICTS, LOCAL_UNITS } from '@/lib/geo-constants'
 import { PROVINCE_INFO } from '@/lib/province-info'
@@ -23,6 +23,7 @@ import {
 } from '@/lib/meteo'
 import { pm25Band, skyKind } from '@/lib/condition'
 import { WeatherIcon } from '@/components/weather-icon'
+import { GovernmentAgencyDirectory } from '@/components/government-agency-directory'
 import { SortableTh, TableShell, useTableSort } from '@/components/data-table'
 import { sortRows } from '@/lib/table-sort'
 
@@ -411,10 +412,14 @@ export default function ProvincePage() {
       </div>
 
       {(sexTotal > 0 || ageBands.length > 0) && (
-        <div className="province-census-grid">
+        <section className="panel place-age">
+          <div className="panel-head"><h3>Age &amp; population structure</h3><span className="muted">Census {sums.year}</span></div>
           {sexTotal > 0 && (
-            <section className="panel place-sex">
-              <div className="panel-head"><h3>Population split</h3><span className="muted">Census {sums.year}</span></div>
+            <div className="district-population-split">
+              <div className="district-population-split-head">
+                <strong>Population split</strong>
+                <span>{nf.format(sexTotal)} people</span>
+              </div>
               <div className="sex-bar">
                 <span style={{ width: `${(sums.male / sexTotal) * 100}%` }} className="sex-male" />
                 <span style={{ width: `${(sums.female / sexTotal) * 100}%` }} className="sex-female" />
@@ -423,13 +428,11 @@ export default function ProvincePage() {
                 <span><i className="dot sex-male" /> Male {nf.format(sums.male)} ({(sums.male / sexTotal * 100).toFixed(1)}%)</span>
                 <span><i className="dot sex-female" /> Female {nf.format(sums.female)} ({(sums.female / sexTotal * 100).toFixed(1)}%)</span>
               </div>
-            </section>
+            </div>
           )}
 
           {ageBands.length > 0 && ageMax > 0 && (
-            <section className="panel place-age">
-              <div className="panel-head"><h3>Age structure</h3><span className="muted">Census {sums.year}</span></div>
-              <div className="age-pyramid" role="group" aria-label={`Population by age band and gender, census ${sums.year}`}>
+            <div className="age-pyramid" role="group" aria-label={`Population by age band and gender, census ${sums.year}`}>
                 <div className="age-pyramid-head">
                   <span>Male</span><span>Age band</span><span>Female</span>
                 </div>
@@ -441,35 +444,48 @@ export default function ProvincePage() {
                       const femaleShare = total > 0 ? (band.female / total) * 100 : 0
                       return <>
                         <span className="age-pyramid-side age-pyramid-left">
-                          <span className="age-pyramid-value">{nf.format(band.male)} <small>({maleShare.toFixed(1)}%)</small></span>
-                          <span className="age-pyramid-track"><span className="age-pyramid-bar age-male" style={{ width: `${(band.male / ageMax) * 100}%` }} /></span>
+                          <span className="age-pyramid-track" title={`${band.band} male: ${nf.format(band.male)} people (${maleShare.toFixed(1)}% of this age band)`}>
+                            <span className="age-pyramid-bar age-male" style={{ width: `${(band.male / ageMax) * 100}%` }} />
+                            <span className="age-pyramid-value">{nf.format(band.male)} <small>{maleShare.toFixed(1)}%</small></span>
+                          </span>
                         </span>
-                    <span className="age-pyramid-label">{band.band}</span>
+                        <span className="age-pyramid-label">{band.band}</span>
                         <span className="age-pyramid-side">
-                          <span className="age-pyramid-track"><span className="age-pyramid-bar age-female" style={{ width: `${(band.female / ageMax) * 100}%` }} /></span>
-                          <span className="age-pyramid-value">{nf.format(band.female)} <small>({femaleShare.toFixed(1)}%)</small></span>
+                          <span className="age-pyramid-track" title={`${band.band} female: ${nf.format(band.female)} people (${femaleShare.toFixed(1)}% of this age band)`}>
+                            <span className="age-pyramid-bar age-female" style={{ width: `${(band.female / ageMax) * 100}%` }} />
+                            <span className="age-pyramid-value">{nf.format(band.female)} <small>{femaleShare.toFixed(1)}%</small></span>
+                          </span>
                         </span>
                       </>
                     })()}
                   </div>
                 ))}
-              </div>
-              <div className="sex-legend">
-                <span><i className="dot sex-male" /> Male</span>
-                <span><i className="dot sex-female" /> Female</span>
-              </div>
-            </section>
+            </div>
           )}
-        </div>
+        </section>
       )}
 
       <div className="province-map-grid">
         <section>
           <div className="panel-head province-section-head">
-            <h3><MapPin size={16} /> Province map</h3>
-            <span className="muted">District centres, capital and popular places</span>
+            <div>
+              <h3><MapPin size={16} /> Province map</h3>
+            </div>
+            <Link
+              href={`/map?lat=${info?.lat ?? 28}&lon=${info?.lon ?? 84}&zoom=8&from=${encodeURIComponent(`/provinces/${province.slug}`)}`}
+              className="text-button"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '.3rem', fontSize: '.72rem', fontWeight: 650 }}
+            >
+              <Compass size={13} /> Open national map <ArrowRight size={12} />
+            </Link>
           </div>
           <div className="place-map-box province-map-box">
+            {info && <Link
+              href={`/map?lat=${info.lat}&lon=${info.lon}&zoom=8&from=${encodeURIComponent(`/provinces/${province.slug}`)}`}
+              className="place-map-expand"
+              aria-label={`Expand ${province.name} map in national map`}
+              title="Expand in national map"
+            ><Maximize2 size={16} /></Link>}
             {info && (
               <ProvinceMap
                 geoSlug={info.geoSlug}
@@ -638,6 +654,8 @@ export default function ProvincePage() {
           </div>
         </section>
       )}
+
+      <GovernmentAgencyDirectory scope="province" place={province.name} />
 
       <p className="place-sources">
         Sources: NSO Census 2021 via BIPAD / NDRRMA · administrative areas, Nepali names and OCHA codes via DataNepal / OCHA COD ·
